@@ -33,6 +33,8 @@ try {
     $portable = New-PortablePackage -SourceDir $publishPath -Destination (Join-Path $outputPath "BrimDeck-$Version-Portable-x64.zip")
     # The app reads update.json from the latest release and verifies the package against it before using it. file, size and
     # sha256 describe the installer, as every installed version expects; portable describes the zip for portable copies.
+    # GitHubUpdates downloads packages from /releases/download/v{version}/…, so publish this folder under a release whose
+    # tag is exactly v{Version} (e.g. v1.2.5). Tags such as fork-1.2.4-* without update.json stay install-only.
     $manifest = [ordered]@{
         version = $Version
         notes = Read-ReleaseNotes $notesPath
