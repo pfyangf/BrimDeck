@@ -75,6 +75,21 @@ public sealed partial class SettingsWindow
         Group(form);
     }
 
+    private void OtpSizeControls()
+    {
+        var dimensions = new Grid { Margin = new Thickness(0, 8, 0, 0) };
+        dimensions.ColumnDefinitions.Add(new ColumnDefinition());
+        dimensions.ColumnDefinitions.Add(new ColumnDefinition());
+        var width = Dimension(Loc.T("宽度", "Width"), S.OtpWidth, 440, 1200, value => Resize(s => s.OtpWidth = value, DeckPage.Otp));
+        width.Margin = new Thickness(0, 0, 20, 0);
+        var height = Dimension(Loc.T("高度", "Height"), S.OtpHeight, 140, 400, value => Resize(s => s.OtpHeight = value, DeckPage.Otp));
+        height.Margin = new Thickness(20, 0, 0, 0);
+        Grid.SetColumn(height, 1);
+        dimensions.Children.Add(width);
+        dimensions.Children.Add(height);
+        Target.Children.Add(dimensions);
+    }
+
     private TextBox Field() => new() { Style = (Style)FindResource("SettingsField"), MaxLength = 256, Margin = new Thickness(0, 4, 0, 12) };
 
     private StackPanel Labeled(string title, TextBox box)

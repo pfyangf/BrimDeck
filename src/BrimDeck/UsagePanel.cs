@@ -156,6 +156,7 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        if (IsOtpPage) { RenderOtp(); return; }
         if (IsMusicPage) { RenderMusic(); return; }
         if (IsMonitorPage) { RenderMonitor(); return; }
         // Only a page that was on screen hands over; one that arrives by the page switch or with the panel opening comes in whole.

@@ -82,6 +82,7 @@ public partial class MainWindow
     internal bool IsMusicPage => CurrentPage == DeckPage.Music;
     internal bool IsMonitorPage => CurrentPage == DeckPage.Monitor;
     internal bool IsUsagePage => CurrentPage == DeckPage.Usage;
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Otp => OtpContent, _ => UsageContent };
     internal CompactMusicLayout? CurrentCompactLayout { get; private set; }
 
     private void InitializeMusic()
@@ -138,7 +139,6 @@ public partial class MainWindow
         bool back = Settings.PageOrder.IndexOf(page) < Settings.PageOrder.IndexOf(before);
         _handover.Send(picture, place, PageContent(page), back ? Handover.Back : Handover.Forward);
     }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         _detailPopup?.Close(); _details = false; _page = page; _musicRenderKey = ""; _handover.Drop();
@@ -190,7 +190,7 @@ public partial class MainWindow
         Toolbar.Height = header.Height;
         PageSwitch.Margin = new Thickness(header.Side, 0, 0, 0);
         FitPageButtons(header);
-        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton })
+        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, OtpPageButton })
         {
             // A local corner for these two buttons only; PanelIconButton keeps its 5 DIP corner elsewhere.
             button.ApplyTemplate();
@@ -204,11 +204,11 @@ public partial class MainWindow
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, MediaSourceButton, ClockLabel })
+        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, OtpPageButton, MediaSourceButton, ClockLabel })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage ? Visibility.Collapsed : Visibility.Visible;
         OrderPageButtons();
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor) })
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (OtpPageButton, DeckPage.Otp) })
         {
             bool current = CurrentPage == page;
             button.Visibility = DeckPages.Shown(Settings, page) ? Visibility.Visible : Visibility.Collapsed;

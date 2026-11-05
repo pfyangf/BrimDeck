@@ -501,6 +501,7 @@ public sealed partial class SettingsWindow : Window
                 {
                     DeckPage.Music => (DefaultDeckPage.Music, Loc.T("音乐", "Music")),
                     DeckPage.Monitor => (DefaultDeckPage.Monitor, Loc.T("系统监控", "System monitor")),
+                    DeckPage.Otp => (DefaultDeckPage.Otp, Loc.T("验证码", "Authenticator")),
                     _ => (DefaultDeckPage.Usage, Loc.T("AI 用量", "AI usage"))
                 });
             filling = true;
@@ -520,6 +521,7 @@ public sealed partial class SettingsWindow : Window
             {
                 DeckPage.Music => SizeRow(Loc.T("显示音乐", "Show music"), Loc.T("音乐", "music"), page, S.MusicPage, value => { Change(s => s.MusicPage = value); FillStarts(); }, Collect(MusicSizeControls), pages, FillStarts),
                 DeckPage.Monitor => SizeRow(Loc.T("显示系统监控", "Show system monitor"), Loc.T("系统监控", "system monitor"), page, S.MonitorPage, value => { Change(s => s.MonitorPage = value); FillStarts(); }, Collect(MonitorSizeControls), pages, FillStarts),
+                DeckPage.Otp => SizeRow(Loc.T("显示验证码", "Show authenticator"), Loc.T("验证码", "authenticator"), page, S.OtpPage, value => { Change(s => s.OtpPage = value); FillStarts(); }, Collect(OtpSizeControls), pages, FillStarts),
                 _ => SizeRow(Loc.T("显示 AI 用量", "Show AI usage"), Loc.T("AI 用量", "AI usage"), page, S.UsagePage, value => { Change(s => s.UsagePage = value); FillStarts(); }, Collect(UsageSizes), pages, FillStarts)
             });
         UpdateDividers(pages);
@@ -640,7 +642,7 @@ public sealed partial class SettingsWindow : Window
                     // The clock goes back to the one the panel theme suggests, as choosing the theme gives.
                     PanelThemes.ApplyClock(PanelTheme.Current,s);break;
                 case 2:s.UsagePage=true;s.MusicPage=defaults.MusicPage;s.DefaultPage=defaults.DefaultPage;s.RightClickSettings=defaults.RightClickSettings;s.Width=defaults.Width;s.Height=defaults.Height;s.QuickSize=null;s.MusicWidth=defaults.MusicWidth;s.MusicHeight=defaults.MusicHeight;s.ExpandHotkey=defaults.ExpandHotkey;s.ResizeHotkey=defaults.ResizeHotkey;s.MouseWheel=defaults.MouseWheel;s.ExpandAtPointer=defaults.ExpandAtPointer;
-                    s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.PageOrder=defaults.PageOrder;break;
+                    s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.OtpPage=defaults.OtpPage;s.OtpWidth=defaults.OtpWidth;s.OtpHeight=defaults.OtpHeight;s.PageOrder=defaults.PageOrder;break;
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;
                     s.CompactMonitor=defaults.CompactMonitor;s.CompactMonitorItems=defaults.CompactMonitorItems;s.CompactReadings=defaults.CompactReadings;s.NotchAutoWidth=defaults.NotchAutoWidth;s.CapsuleAutoWidth=defaults.CapsuleAutoWidth;s.MonitorTemperatures=defaults.MonitorTemperatures;s.MonitorStorage=defaults.MonitorStorage;s.MonitorPower=defaults.MonitorPower;break;
                 // The current theme's application colors go back to its own; the other themes keep what was saved for them.
