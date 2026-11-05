@@ -107,7 +107,7 @@ Banners that QQ, WeChat and mail send to Windows notification center can show on
 
 ### Authenticator
 
-Settings › Verification › Authenticator shows TOTP codes (about 30 seconds, 6 digits). Type a Base32 secret, or import an `otpauth://` QR code from an image file or the clipboard. The secret is encrypted for the current Windows user and stays on this PC. See [Authenticator](docs/en-US/otp.md).
+Settings › Verification › Authenticator adds and removes TOTP codes. The expanded panel can also show an Authenticator page: swipe between accounts and tap a code to copy it. The secret is encrypted for the current Windows user and stays on this PC. See [Authenticator](docs/en-US/otp.md).
 
 ### Panel themes
 

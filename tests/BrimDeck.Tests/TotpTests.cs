@@ -63,6 +63,10 @@ internal static class TotpTests
         var pixels = writer.Write(uri);
         check("a QR image of an otpauth URI decodes back to that URI", QrText.Read(pixels.Pixels, pixels.Width, pixels.Height) == uri);
         check("pixels that are not a QR code decode to nothing", QrText.Read(new byte[16], 2, 2) is null);
+        check("the authenticator page is last in the switch and keeps the saved number", DeckPages.Order[^1] == DeckPage.Otp && (int)DeckPage.Otp == 3 && new DeckSettings().OtpPage);
+        var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2]}""")!;
+        check("an older page order gains the authenticator page", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp]));
+        check("the carousel stays on one account and stops at the ends", OtpCarousel.Step(0, 3, -1) == 0 && OtpCarousel.Step(1, 3, 1) == 2 && OtpCarousel.Step(2, 3, 1) == 2 && OtpCarousel.Step(5, 0, 1) == 0);
     }
 
     private static string storePath(string folder) => Path.Combine(folder, "otp.dat");

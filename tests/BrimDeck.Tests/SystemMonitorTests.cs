@@ -308,17 +308,17 @@ static class SystemMonitorTests
         check("Pages: a hidden page falls back to the first shown one", DeckPages.Resolve(settings, DeckPage.Usage) == DeckPage.Music);
         settings.MonitorPage = false;
         check("Pages: the music page alone", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Music);
-        settings.MusicPage = false;
+        settings.MusicPage = false; settings.OtpPage = false;
         check("Pages: with every page off the usage page says so", DeckPages.Resolve(settings, DeckPage.Music) == DeckPage.Usage && DeckPages.Visible(settings).Count == 0);
         var ordered = new DeckSettings { PageOrder = [DeckPage.Monitor, DeckPage.Usage, DeckPage.Music] };
-        check("Pages: the switch follows the chosen order", DeckPages.Visible(ordered).SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music]));
+        check("Pages: the switch follows the chosen order", DeckPages.Visible(ordered).SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music, DeckPage.Otp]));
         ordered.MonitorPage = false;
         check("Pages: a hidden page falls back to the first shown one in the chosen order", DeckPages.Resolve(ordered, DeckPage.Monitor) == DeckPage.Usage);
         var odd = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[2,9,2]}""")!;
-        check("Pages: unknown and repeated pages are dropped and missing ones added", odd.PageOrder.SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music]));
+        check("Pages: unknown and repeated pages are dropped and missing ones added", odd.PageOrder.SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music, DeckPage.Otp]));
         var copy = ordered.Copy(); copy.PageOrder = [.. DeckPages.Order];
         var orderRead = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>(System.Text.Json.JsonSerializer.Serialize(ordered))!;
-        check("Pages: the order is copied deeply and survives saving and reading", ordered.PageOrder[0] == DeckPage.Monitor && orderRead.PageOrder.SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music])
+        check("Pages: the order is copied deeply and survives saving and reading", ordered.PageOrder[0] == DeckPage.Monitor && orderRead.PageOrder.SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music, DeckPage.Otp])
             && new DeckSettings().PageOrder.SequenceEqual(DeckPages.Order));
         var wheelOff = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"MouseWheelPages":false}""")!; wheelOff.Normalize();
         var wheelOn = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"MouseWheelPages":true}""")!; wheelOn.Normalize();
@@ -327,16 +327,17 @@ static class SystemMonitorTests
             && !System.Text.Json.JsonSerializer.Serialize(wheelOff).Contains("MouseWheelPages"));
         check("The wheel: enum values stay saved as before", (int)MouseWheelAction.None == 0 && (int)MouseWheelAction.Pages == 1 && (int)MouseWheelAction.Volume == 2);
         check("Pages: opening choices", DeckPages.Opening(DefaultDeckPage.Monitor) == DeckPage.Monitor && DeckPages.Opening(DefaultDeckPage.Last) is null
-            && DeckPages.Opening(DefaultDeckPage.Usage) == DeckPage.Usage && DeckPages.Opening(DefaultDeckPage.Music) == DeckPage.Music);
+            && DeckPages.Opening(DefaultDeckPage.Usage) == DeckPage.Usage && DeckPages.Opening(DefaultDeckPage.Music) == DeckPage.Music
+            && DeckPages.Opening(DefaultDeckPage.Otp) == DeckPage.Otp);
         var sizes = new DeckSettings { Width = 500, Height = 150, MusicWidth = 700, MusicHeight = 180, MonitorWidth = 600, MonitorHeight = 300 };
         check("Pages: the window holds the largest shown page", DeckPages.Largest(sizes) == (700, 300));
-        sizes.MusicPage = false; sizes.MonitorPage = false;
+        sizes.MusicPage = false; sizes.MonitorPage = false; sizes.OtpPage = false;
         check("Pages: only shown pages size the window", DeckPages.Largest(sizes) == (Math.Max(500, sizes.MinimumWidth), 150));
         var saved = new DeckSettings { MonitorWidth = 5000, MonitorHeight = double.NaN, MonitorInterval = 9, MonitorPalette = (MonitorPalette)42, MonitorSort = (ProcessSort)7, LastPage = (DeckPage)9 };
         saved.Normalize();
         check("Pages: monitor settings are normalized", saved is { MonitorWidth: 1200, MonitorInterval: 2, MonitorPalette: MonitorPalette.Theme, MonitorSort: ProcessSort.Cpu, LastPage: DeckPage.Usage }
             && saved.MonitorHeight == MonitorSizes.Default.Height);
-        check("Pages: enum values stay saved as before", (int)DeckPage.Usage == 0 && (int)DeckPage.Music == 1 && (int)DeckPage.Monitor == 2 && (int)DefaultDeckPage.Monitor == 3);
+        check("Pages: enum values stay saved as before", (int)DeckPage.Usage == 0 && (int)DeckPage.Music == 1 && (int)DeckPage.Monitor == 2 && (int)DeckPage.Otp == 3 && (int)DefaultDeckPage.Monitor == 3 && (int)DefaultDeckPage.Otp == 4);
     }
 
     // The easing the monitor's gauges follow, and the spring the drag follows.

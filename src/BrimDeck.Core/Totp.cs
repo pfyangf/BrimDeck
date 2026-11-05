@@ -246,6 +246,8 @@ public sealed class OtpStore
         }
     }
 
+    public event Action? Changed;
+
     public void Save(IReadOnlyList<OtpAccount> accounts)
     {
         lock (_gate)
@@ -261,5 +263,17 @@ public sealed class OtpStore
             }
             finally { CryptographicOperations.ZeroMemory(plain); }
         }
+        Changed?.Invoke();
+    }
+}
+
+// Which account the open panel shows. The island keeps one code in focus and steps to the neighbours.
+public static class OtpCarousel
+{
+    public static int Step(int index, int count, int delta)
+    {
+        if (count <= 0) return 0;
+        if (delta == 0) return Math.Clamp(index, 0, count - 1);
+        return Math.Clamp(index + delta, 0, count - 1);
     }
 }

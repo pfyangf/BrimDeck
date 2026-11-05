@@ -4,7 +4,15 @@ BrimDeck can show one-time passwords (TOTP) in settings, for sites that use two-
 
 Open **Settings › Verification › Authenticator**. Settings opens from the gear at the top right of the expanded panel, from a right-click on the panel, or from the tray icon.
 
-## View
+## On the island
+
+Open the panel and choose Authenticator with the page buttons at the top left. Turn the page on or off, or drag it among the others, under **Settings › Expanded view › Pages shown**, the same way as Music and System monitor.
+
+One code is in focus. The names of the previous and next accounts peek at the edges. Swipe up or down, or roll the wheel, to move between accounts. Tap the digits to copy them. The ring is the time left in this step, and it turns to a warning color under 5 seconds. With no accounts, the page says to add one in settings.
+
+Adding and deleting stay under **Settings › Verification › Authenticator**.
+
+## In settings
 
 Each account is one row: issuer, account name, the current 6-digit code, and how many seconds are left in this step. The code changes about every 30 seconds, as in a normal authenticator. The bar changes to a warning color when fewer than 5 seconds remain.
 
