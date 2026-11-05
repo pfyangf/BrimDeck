@@ -101,6 +101,10 @@ Works with players that use Windows media controls, with extra support for some 
 
 The page is adapted from [ftop](https://github.com/Nongfsq/ftop) by Nongfsq (MIT License), a system monitor for macOS.
 
+### Message notices
+
+Banners that QQ, WeChat and mail send to Windows notification center can show on the collapsed notch or capsule for about 6 seconds. The switches are under Settings › Quotas and usage › Notifications. BrimDeck must be allowed to access notifications, and those apps must post system notifications. WeChat is missed when it uses only its own popup. Permission and limits are in [Message notices](docs/en-US/notifications.md).
+
 ### Panel themes
 
 <img src="docs/en-US/images/themes.png" width="100%" alt="The same AI usage page in the Dark, Light, Night Owl, Dracula and Cyberpunk: Edgerunners themes, and in an example custom theme">
@@ -124,6 +128,7 @@ Both versions update from within the app, and both keep settings and data in `%L
 1. After you install and start BrimDeck, the panel appears at the top center of the primary display, showing Claude and Codex by default.
 2. Move the pointer over the panel to open it; move away or press Esc to close it.
 3. Select the settings button at the top right of the open panel to add tools or change settings. You can also right-click the open panel, double-click the tray icon, or right-click the tray icon.
+4. The interface follows the Windows display language: a first start in any Chinese language uses Simplified Chinese, and any other language uses English. Switch it at any time under Settings › General › Language. Both languages stay available.
 
 ## Uninstall
 
@@ -135,7 +140,7 @@ Installer: uninstall BrimDeck from Apps in Windows Settings. Portable: turn off 
 - Sign-in tokens are used only in memory and never written to disk; API keys you enter are stored on this PC, encrypted by Windows.
 - Goes online only to read quotas and usage, update model prices, fetch lyrics and covers, and check for updates. Conversations are never uploaded, and no usage data is collected.
 
-For the files BrimDeck reads and the addresses it connects to, see [Data and privacy](docs/en-US/privacy.md).
+For the files BrimDeck reads and the addresses it connects to, see [Data and privacy](docs/en-US/privacy.md). QQ, WeChat and mail banners are read only from Windows notification center on this PC, never saved or uploaded; see [Message notices](docs/en-US/notifications.md).
 
 ## FAQ
 

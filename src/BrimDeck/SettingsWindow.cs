@@ -642,7 +642,7 @@ public sealed partial class SettingsWindow : Window
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;
                     s.CompactMonitor=defaults.CompactMonitor;s.CompactMonitorItems=defaults.CompactMonitorItems;s.CompactReadings=defaults.CompactReadings;s.NotchAutoWidth=defaults.NotchAutoWidth;s.CapsuleAutoWidth=defaults.CapsuleAutoWidth;s.MonitorTemperatures=defaults.MonitorTemperatures;s.MonitorStorage=defaults.MonitorStorage;s.MonitorPower=defaults.MonitorPower;break;
                 // The current theme's application colors go back to its own; the other themes keep what was saved for them.
-                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.IncludeWsl=defaults.IncludeWsl;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
+                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.MessageNotices=defaults.MessageNotices;s.NoticeQq=defaults.NoticeQq;s.NoticeWeChat=defaults.NoticeWeChat;s.NoticeMail=defaults.NoticeMail;s.IncludeWsl=defaults.IncludeWsl;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
                 case 5:s.EqualizerAlways=defaults.EqualizerAlways;s.EqualizerBars=defaults.EqualizerBars;s.EqualizerMode=defaults.EqualizerMode;s.EqualizerColor=defaults.EqualizerColor;s.EqualizerCustomColor=defaults.EqualizerCustomColor;
                     s.MusicText=defaults.MusicText;s.MusicEqualizerBars=defaults.MusicEqualizerBars;s.MusicTrackNotice=defaults.MusicTrackNotice;s.MusicPausedHide=defaults.MusicPausedHide;s.MusicInstrumentalTitle=defaults.MusicInstrumentalTitle;s.MusicCompactCover=defaults.MusicCompactCover;s.MusicPageCover=defaults.MusicPageCover;s.LyricsEnabled=defaults.LyricsEnabled;
                     s.MusicLyricColor=defaults.MusicLyricColor;s.MusicLyricCustomColor=defaults.MusicLyricCustomColor;break;
@@ -713,6 +713,19 @@ public sealed partial class SettingsWindow : Window
         Group(Toggle(Loc.T("预警和告警提示", "Warning and critical notices"), S.QuotaAlerts, v => Change(s => s.QuotaAlerts = v), help:
             Loc.T($"开启后，某个应用的已用比例升到预警（{AppPresets.WarningPercent:0}%）或告警（{AppPresets.CriticalPercent:0}%）时，收起的刘海或胶囊会短暂显示该应用的名称、已用比例和重置时间，约 5 秒后恢复。",
                 $"When on, and an app's used share rises to the warning ({AppPresets.WarningPercent:0}%) or critical ({AppPresets.CriticalPercent:0}%) level, the collapsed notch or capsule briefly shows the app's name, used share and reset time, then returns after about 5 seconds.")));
+        var access = TextLine(_app.Toasts?.Status ?? Loc.T("消息提示尚未启动。", "Message notices have not started."), 12, TextSecondary);
+        access.TextWrapping = TextWrapping.Wrap; access.MaxWidth = 480;
+        var check = ActionButton(Loc.T("检查通知访问", "Check notification access"), () => _app.Toasts?.RequestAccess(() => { if (_page == 3) ShowPage(3); }));
+        AutomationProperties.SetName(check, Loc.T("检查通知访问", "Check notification access"));
+        Group(Toggle(Loc.T("QQ、微信和邮件", "QQ, WeChat and mail"), S.MessageNotices, v => Change(s => s.MessageNotices = v), help:
+            Loc.T("开启后，这三个应用发到 Windows 通知中心的横幅会显示在收起的刘海或胶囊上，大约 6 秒后恢复。只读取系统已经弹出的通知，不读取聊天记录，也不点击或清除这些通知。QQ 音乐不会当作 QQ。微信若只使用自己的弹窗、不发 Windows 通知，这里看不到。需要允许 BrimDeck 访问通知，并在各应用里打开系统通知。详见说明文档。",
+                "When on, banners these three apps send to Windows notification center show on the collapsed notch or capsule for about 6 seconds. Only banners Windows already shows are read; chats are not read, and the banners are not clicked or dismissed. QQ Music is not treated as QQ. WeChat is missed when it uses only its own popup and posts no Windows notification. Allow BrimDeck to access notifications, and turn on system notifications in each app. See the guide.")),
+            Toggle(Loc.T("QQ", "QQ"), S.NoticeQq, v => Change(s => s.NoticeQq = v)),
+            Toggle(Loc.T("微信", "WeChat"), S.NoticeWeChat, v => Change(s => s.NoticeWeChat = v)),
+            Toggle(Loc.T("邮件", "Mail"), S.NoticeMail, v => Change(s => s.NoticeMail = v)),
+            Row(Loc.T("通知访问", "Notification access"), check, access, () => Loc.T(
+                "使用 Windows 公开的通知监听接口读取操作中心里的横幅。未打包的桌面应用订阅不到“通知已变化”，因此大约每 2 秒读取一次；读不到时改为约每 15 秒重试。通知正文不会写入日志或设置。",
+                "Banners in Action Center are read through Windows' public notification listener. An unpackaged desktop app cannot subscribe to notification changes, so the current list is read about every 2 seconds, and about every 15 seconds after a failure. Banner text is not written to the log or to settings.")));
         SectionTitle(Loc.T("数据来源", "Data sources"));
         Group(Toggle(Loc.T("同步 WSL 中的用量统计", "Include usage from WSL"), S.IncludeWsl, v => Change(s => s.IncludeWsl = v), help:
             Loc.T("开启后，会读取已安装的 WSL 子系统中 Claude Code 和 Codex CLI 的会话记录，并计入 Token 用量与费用统计。读取时会唤醒尚未运行的 WSL 子系统，默认关闭。",

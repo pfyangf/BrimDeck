@@ -64,3 +64,10 @@ All files are stored in `%LOCALAPPDATA%\BrimDeck`:
 - Through this port, BrimDeck reads only the song that is playing, the playback state, progress, length, cover address and the song's hash, and has KuGou act only when you select play, pause, previous or next. It neither reads nor keeps your account details.
 - The song's hash and length are sent to KuGou's lyrics service to look up the song's lyrics.
 - The port stays until KuGou starts again after Always enable full control is turned off in Settings › Players › KuGou Music, or a KuGou update replaces the file; quitting BrimDeck does not close it. Turn it on only in an environment you trust.
+
+## Message notices
+
+- With message notices on under Settings › Quotas and usage › Notifications, BrimDeck reads the banners currently in Windows notification center through Windows' public notification listener, and keeps those from QQ, WeChat and mail.
+- You allow this under Windows Settings › Privacy & security › Notifications › Notification access. Until you do, nothing is read.
+- The app name, title and text of a banner stay in memory only long enough to show on the notch or capsule for about 6 seconds. They are not written to settings, the log or any other file, they are not uploaded, and the banners are not clicked or dismissed.
+- Chat history, databases and the contents of those apps' windows are not read. See [Message notices](notifications.md).
