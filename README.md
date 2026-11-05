@@ -105,6 +105,10 @@ The page is adapted from [ftop](https://github.com/Nongfsq/ftop) by Nongfsq (MIT
 
 Banners that QQ, WeChat and mail send to Windows notification center can show on the collapsed notch or capsule for about 6 seconds. The switches are under Settings › Quotas and usage › Notifications. BrimDeck must be allowed to access notifications, and those apps must post system notifications. WeChat is missed when it uses only its own popup. Permission and limits are in [Message notices](docs/en-US/notifications.md).
 
+### Authenticator
+
+Settings › Verification › Authenticator shows TOTP codes (about 30 seconds, 6 digits). Type a Base32 secret, or import an `otpauth://` QR code from an image file or the clipboard. The secret is encrypted for the current Windows user and stays on this PC. See [Authenticator](docs/en-US/otp.md).
+
 ### Panel themes
 
 <img src="docs/en-US/images/themes.png" width="100%" alt="The same AI usage page in the Dark, Light, Night Owl, Dracula and Cyberpunk: Edgerunners themes, and in an example custom theme">

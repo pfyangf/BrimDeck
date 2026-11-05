@@ -71,3 +71,9 @@ All files are stored in `%LOCALAPPDATA%\BrimDeck`:
 - You allow this under Windows Settings › Privacy & security › Notifications › Notification access. Until you do, nothing is read.
 - The app name, title and text of a banner stay in memory only long enough to show on the notch or capsule for about 6 seconds. They are not written to settings, the log or any other file, they are not uploaded, and the banners are not clicked or dismissed.
 - Chat history, databases and the contents of those apps' windows are not read. See [Message notices](notifications.md).
+
+## Authenticator
+
+- TOTP secrets added under Settings › Verification › Authenticator are stored in `%LOCALAPPDATA%\BrimDeck\otp.dat`.
+- The whole account list is encrypted with Windows DPAPI for the current user (the same protection as `secrets.dat`). The file is not plaintext.
+- Secrets and codes are not uploaded and are not written to `settings.json`. See [Authenticator](otp.md).

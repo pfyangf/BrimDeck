@@ -105,6 +105,10 @@ BrimDeck 平时位于屏幕顶部中央，提供刘海（默认）、胶囊和�
 
 QQ、微信和邮件发到 Windows 通知中心的横幅，可以在收起的刘海或胶囊上显示大约 6 秒。开关在“设置 › 配额与统计 › 提示”。需要允许 BrimDeck 访问通知，并且这些应用自己打开了系统通知。微信若只用自己的弹窗、不发 Windows 通知，则看不到。说明、权限和限制见[消息提示](docs/zh-CN/notifications.md)。
 
+### 验证码
+
+设置里的“验证 › 验证码”可以查看 TOTP 一次性验证码（约 30 秒、6 位）。可以手动输入 Base32 密钥，也可以从二维码图片或剪贴板导入 `otpauth://`。密钥用 Windows 当前用户加密保存在本机。详见[验证码](docs/zh-CN/otp.md)。
+
 ### 面板主题
 
 <img src="docs/zh-CN/images/themes.png" width="100%" alt="同一个 AI 用量页在深色、浅色、Night Owl、Dracula、赛博朋克：边缘行者主题，以及一个自定义主题示例下的样子">
