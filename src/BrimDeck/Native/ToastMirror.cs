@@ -24,30 +24,36 @@ internal sealed class ToastMirror : IDisposable
 
     private readonly DispatcherTimer _timer;
     private readonly MessageNoticeFeed _feed = new();
+    private readonly HashSet<string> _mailSeen = new(StringComparer.Ordinal);
+    private readonly Queue<string> _mailOrder = new();
     private Flags _flags;
-    private bool _disposed, _polling, _asked, _forceRequest;
+    private bool _disposed, _polling, _asked, _forceRequest, _mailPrimed;
     private Action? _pending;
 
     public ToastMirror(Dispatcher dispatcher)
     {
         _timer = new DispatcherTimer(PollEvery, DispatcherPriority.Background, (_, _) => _ = PollAsync(null), dispatcher);
         _timer.Stop();
-        Status = Idle();
+        Status = Idle(default);
     }
 
     public event Action<MessageNotice>? Arrived;
+    // Verification-looking mail toasts for the Email OTP page (EmailOtpFeed), even when message banners are off.
+    public event Action<EmailOtpMessage>? MailOtpArrived;
     public string Status { get; private set; }
 
     public void Apply(DeckSettings settings)
     {
         var flags = Flags.From(settings);
         bool changed = flags != _flags;
+        bool mailChanged = flags.MailOtp != _flags.MailOtp;
         _flags = flags;
         if (changed) _feed.Reset();
+        if (mailChanged || !flags.MailOtp) { _mailSeen.Clear(); _mailOrder.Clear(); _mailPrimed = false; }
         if (!flags.Any)
         {
             _timer.Stop();
-            Status = Idle();
+            Status = Idle(flags);
             return;
         }
         bool start = !_timer.IsEnabled;
@@ -80,15 +86,16 @@ internal sealed class ToastMirror : IDisposable
             var flags = _flags;
             bool force = _forceRequest;
             _forceRequest = false;
-            if (!flags.Any && !force) { Status = Idle(); return; }
+            if (!flags.Any && !force) { Status = Idle(flags); return; }
             var (access, toasts) = await ReadAsync(force);
             if (_disposed) return;
-            Status = Describe(access);
+            Status = Describe(access, flags);
             _timer.Interval = access == Access.Allowed ? PollEvery : RetryEvery;
             if (toasts is null || !flags.Any) return;
             toasts.Sort((a, b) => a.Created.CompareTo(b.Created));
             var fresh = _feed.Observe(toasts, flags.Allows);
             if (fresh.Count > 0) Arrived?.Invoke(fresh[^1]);
+            ObserveMailOtp(toasts, flags);
         }
         finally
         {
@@ -176,12 +183,37 @@ internal sealed class ToastMirror : IDisposable
         _ => Access.Unknown
     };
 
-    private static string Idle() => Loc.T("消息提示已关闭，不会读取通知。", "Message notices are off, so notifications are not read.");
-
-    private static string Describe(Access access) => access switch
+    private void ObserveMailOtp(IReadOnlyList<ToastSnapshot> toasts, Flags flags)
     {
-        Access.Allowed => Loc.T("已允许读取 Windows 通知。新的 QQ、微信和邮件横幅会显示在刘海或胶囊上。",
-            "Windows notification access is allowed. New QQ, WeChat and mail banners show on the notch or capsule."),
+        if (!flags.MailOtp) return;
+        if (!_mailPrimed)
+        {
+            foreach (var item in toasts) _mailSeen.Add(item.Key);
+            _mailPrimed = true;
+            return;
+        }
+        foreach (var item in toasts)
+        {
+            if (!_mailSeen.Add(item.Key)) continue;
+            _mailOrder.Enqueue(item.Key);
+            while (_mailOrder.Count > MessageNoticeFeed.Capacity && _mailOrder.TryDequeue(out var oldest))
+                _mailSeen.Remove(oldest);
+            if (EmailOtp.FromToast(item) is not { } message) continue;
+            MailOtpArrived?.Invoke(message);
+        }
+    }
+
+    private static string Idle(Flags flags) => flags.MailOtp
+        ? Loc.T("消息横幅已关闭；仍会读取邮件通知以提取验证码。", "Message banners are off; mail notifications are still read for verification codes.")
+        : Loc.T("消息提示已关闭，不会读取通知。", "Message notices are off, so notifications are not read.");
+
+    private static string Describe(Access access, Flags flags) => access switch
+    {
+        Access.Allowed => flags.Banners
+            ? Loc.T("已允许读取 Windows 通知。新的 QQ、微信和邮件横幅会显示在刘海或胶囊上。",
+                "Windows notification access is allowed. New QQ, WeChat and mail banners show on the notch or capsule.")
+            : Loc.T("已允许读取 Windows 通知。新的验证码邮件会进入邮箱验证码页。",
+                "Windows notification access is allowed. New verification mails appear on the email codes page."),
         Access.Denied => Loc.T("系统拒绝了通知访问。请打开“Windows 设置 › 隐私和安全性 › 通知”，在“通知访问”中允许 BrimDeck，然后点“检查通知访问”。",
             "Windows denied notification access. Open Settings › Privacy & security › Notifications, allow BrimDeck under Notification access, then select Check notification access."),
         Access.Unspecified => Loc.T("尚未授予通知访问。点“检查通知访问”。若没有系统提示，请到“Windows 设置 › 隐私和安全性 › 通知”中允许 BrimDeck。",
@@ -191,9 +223,10 @@ internal sealed class ToastMirror : IDisposable
         _ => Loc.T("尚未检查 Windows 通知访问。", "Windows notification access has not been checked.")
     };
 
-    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail)
+    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail, bool MailOtp)
     {
-        public bool Any => Master && (Qq || WeChat || Mail);
+        public bool Banners => Master && (Qq || WeChat || Mail);
+        public bool Any => Banners || MailOtp;
         public bool Allows(MessageApp app) => Master && app switch
         {
             MessageApp.Qq => Qq,
@@ -201,6 +234,7 @@ internal sealed class ToastMirror : IDisposable
             MessageApp.Mail => Mail,
             _ => false
         };
-        public static Flags From(DeckSettings settings) => new(settings.MessageNotices, settings.NoticeQq, settings.NoticeWeChat, settings.NoticeMail);
+        public static Flags From(DeckSettings settings) => new(settings.MessageNotices, settings.NoticeQq, settings.NoticeWeChat, settings.NoticeMail,
+            settings.MailOtpPage && settings.MailOtpOutlook);
     }
 }

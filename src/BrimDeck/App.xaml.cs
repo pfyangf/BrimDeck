@@ -22,6 +22,7 @@ public partial class App : Application
     public UsageService Usage { get; private set; } = null!;
     public ProviderSecrets Secrets { get; private set; } = null!;
     public OtpStore Otp { get; private set; } = null!;
+    public EmailOtpFeed MailCodes { get; } = new();
     public Pricing Prices { get; private set; } = null!;
     public AppUpdates Updates { get; internal set; } = null!;
     // The main panel. It owns the tray icon, reads the usage data and takes the settings preview; every other chosen
@@ -313,6 +314,11 @@ public partial class App : Application
         Toasts.Arrived += notice =>
         {
             foreach (var deck in Decks.ToList()) deck.ShowMessage(notice);
+        };
+        Toasts.MailOtpArrived += message =>
+        {
+            if (!MailCodes.Ingest(message)) return;
+            foreach (var deck in Decks.ToList()) deck.NotifyMailOtp();
         };
         Toasts.Apply(Settings);
     }

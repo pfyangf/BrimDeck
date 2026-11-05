@@ -49,6 +49,7 @@ public partial class MainWindow
         UsageContent.Visibility = Visibility.Collapsed;
         MonitorContent.Visibility = Visibility.Collapsed;
         MusicContent.Visibility = Visibility.Collapsed;
+        MailContent.Visibility = Visibility.Collapsed;
         OtpContent.Visibility = Visibility.Visible;
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;

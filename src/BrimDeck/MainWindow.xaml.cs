@@ -169,6 +169,7 @@ public partial class MainWindow : Window
             _context = _host.DetectNow();
             if (_lead is { } lead) { Snapshots = lead.Snapshots; _updatedAt = lead._updatedAt; DetectThresholds(); UpdateNotice(); }
             WatchOtp();
+            WatchMail();
             ApplySettings();
             Boot();
             _trackPointer = true; UpdatePointerTracking();
@@ -536,6 +537,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(MonitorPageButton, Loc.T("系统监控", "System monitor"));
         System.Windows.Automation.AutomationProperties.SetName(MusicPageButton, Loc.T("音乐", "Music"));
         System.Windows.Automation.AutomationProperties.SetName(OtpPageButton, Loc.T("验证码", "Authenticator"));
+        System.Windows.Automation.AutomationProperties.SetName(MailPageButton, Loc.T("邮箱验证码", "Email codes"));
         System.Windows.Automation.AutomationProperties.SetName(SettingsButton, Loc.T("设置", "Settings"));
     }
     public void Preview(bool enabled, bool expanded = true)

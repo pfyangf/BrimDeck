@@ -17,7 +17,8 @@ try
     {
         LanguageTests.Run(root, Check);
         MessageNoticeTests.Run(root, Check);
-        TotpTests.Run(root, Check);
+        EmailOtpTests.Run(root, Check);
+    TotpTests.Run(root, Check);
         Console.WriteLine($"\n{passed} checks passed.");
         return;
     }
@@ -83,6 +84,7 @@ try
     FullscreenRuleTests.Run(Check);
     LanguageTests.Run(root, Check);
     MessageNoticeTests.Run(root, Check);
+    EmailOtpTests.Run(root, Check);
     TotpTests.Run(root, Check);
     await ConfiguredProviderTests.Run(Check);
     await ZCodeUsageTests.Run(root, Check);

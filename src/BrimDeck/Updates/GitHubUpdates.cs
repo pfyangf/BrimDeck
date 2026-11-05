@@ -7,7 +7,11 @@ namespace BrimDeck.Updates;
 
 internal static class GitHubUpdates
 {
-    public const string RepositoryUrl = "https://github.com/MoFeng2223/BrimDeck";
+    // This fork's release feed. Keep package URLs on the v{version} tag scheme used by .github/workflows/release.yml
+    // and scripts/Publish-Release.ps1 (update.json on the release, assets under /releases/download/v{version}/…).
+    // Ad-hoc tags such as fork-1.2.4-* without update.json are install-only and will not drive in-app updates until a
+    // proper v* release is published with update.json (Publish-Release / the release workflow).
+    public const string RepositoryUrl = "https://github.com/pfyangf/BrimDeck";
     // Must match AppId in installer/BrimDeck.iss. Inno Setup registers the uninstall entry as "<AppId>_is1".
     public const string InstallerAppId = "{9D9AD6ED-CF62-4527-A587-6DBE94A74B9E}";
     public static string BuildVersion => ApplicationVersion.Current;

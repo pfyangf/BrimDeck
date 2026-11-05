@@ -40,8 +40,8 @@ public sealed record FullscreenRule(string Name = "", string Path = "")
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Otp }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Otp }
+public enum DeckPage { Usage, Music, Monitor, Otp, Mail }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Otp, Mail }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -349,6 +349,12 @@ public sealed class DeckSettings
     public bool OtpPage { get; set; } = true;
     public double OtpWidth { get; set; } = 480;
     public double OtpHeight { get; set; } = 220;
+    // Email verification-code page: reads Outlook / Windows Mail toasts for codes (EmailOtp). Off until the user turns it on.
+    public bool MailOtpPage { get; set; }
+    public double MailOtpWidth { get; set; } = 520;
+    public double MailOtpHeight { get; set; } = 240;
+    // Watch Outlook / Windows Mail (and other classified mail apps) notification-center toasts for verification mails.
+    public bool MailOtpOutlook { get; set; } = true;
     // The notch and the capsule each keep their own choices; the indicator only offers the playback progress.
     public bool NotchSummary { get; set; } = true;
     public bool NotchMusic { get; set; } = true;
@@ -646,6 +652,8 @@ public sealed class DeckSettings
         MusicHeight = double.IsFinite(MusicHeight) ? Math.Clamp(MusicHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 200;
         OtpWidth = double.IsFinite(OtpWidth) ? Math.Clamp(OtpWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 480;
         OtpHeight = double.IsFinite(OtpHeight) ? Math.Clamp(OtpHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 220;
+        MailOtpWidth = double.IsFinite(MailOtpWidth) ? Math.Clamp(MailOtpWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 520;
+        MailOtpHeight = double.IsFinite(MailOtpHeight) ? Math.Clamp(MailOtpHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         MonitorHeight = double.IsFinite(MonitorHeight) ? Math.Clamp(MonitorHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : MonitorSizes.Default.Height;
         PanelScale = PanelScales.Fit(PanelScale);
