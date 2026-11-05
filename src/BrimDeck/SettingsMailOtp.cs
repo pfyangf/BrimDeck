@@ -142,6 +142,16 @@ public sealed partial class SettingsWindow
 
     private void AddImapAccount()
     {
+        try { OpenImapBindDialog(); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, Loc.T("无法打开 IMAP 绑定", "Could not open IMAP bind"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenImapBindDialog()
+    {
         var dialog = new Window
         {
             Title = Loc.T("添加 IMAP 邮箱", "Add IMAP mailbox"),
@@ -165,9 +175,7 @@ public sealed partial class SettingsWindow
 
         var email = Field(); AutomationProperties.SetName(email, Loc.T("邮箱地址", "Email address"));
         var user = Field(); AutomationProperties.SetName(user, Loc.T("用户名", "Username"));
-        var password = new PasswordBox { Style = (Style)FindResource("SettingsField"), Margin = new Thickness(0, 4, 0, 12), MaxLength = 256 };
-        // PasswordBox may not use SettingsField the same way — fall back.
-        try { password.Style = (Style)FindResource("SettingsField"); } catch (ResourceReferenceKeyNotFoundException) { password.Height = 32; }
+        var password = new PasswordBox { Style = (Style)FindResource("SettingsPasswordField"), Margin = new Thickness(0, 4, 0, 12), MaxLength = 256 };
         AutomationProperties.SetName(password, Loc.T("密码或授权码", "Password or app password"));
         var host = Field(); AutomationProperties.SetName(host, Loc.T("IMAP 服务器", "IMAP server"));
         var port = Field(); port.Text = "993"; AutomationProperties.SetName(port, Loc.T("端口", "Port"));
