@@ -12,13 +12,16 @@ public sealed record EmailOtpMessage(
     string Subject,
     string Body,
     string? Code,
-    DateTimeOffset ReceivedAt);
+    DateTimeOffset ReceivedAt,
+    Guid? AccountId = null,
+    string? ExternalId = null,
+    bool IsVerification = true);
 
 // Pulls a one-time code out of a mail toast or a pasted preview. Only looks at text that already looks like a
 // verification mail, so ordinary notifications are not treated as codes.
 public static partial class EmailOtp
 {
-    public const int Capacity = 24;
+    public const int Capacity = 48;
 
     public static bool LooksLikeVerification(string? title, string? body)
     {
@@ -129,9 +132,35 @@ public static partial class EmailOtp
 
     [GeneratedRegex(@"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex FromAddress();
+
+    // A message fetched from a bound Microsoft Graph or IMAP mailbox. Code is filled only when the mail looks like a verification.
+    public static EmailOtpMessage FromBound(
+        BoundMailAccount account,
+        string externalId,
+        string? from,
+        string subject,
+        string body,
+        DateTimeOffset receivedAt)
+    {
+        subject = (subject ?? "").Trim();
+        body = (body ?? "").Trim();
+        bool verification = LooksLikeVerification(subject, body);
+        return new EmailOtpMessage(
+            Guid.NewGuid(),
+            account.KindLabel,
+            account.Label,
+            string.IsNullOrWhiteSpace(from) ? GuessFrom(subject, body) : from.Trim(),
+            subject,
+            body,
+            verification ? ExtractCode(subject, body) : null,
+            receivedAt,
+            account.Id,
+            string.IsNullOrWhiteSpace(externalId) ? null : externalId.Trim(),
+            verification);
+    }
 }
 
-// Newest verification mails from Outlook / Windows Mail toasts (and optional previews). Keeps only Capacity entries.
+// Newest mails from toasts and bound mailboxes (Graph / IMAP). Keeps only Capacity entries.
 public sealed class EmailOtpFeed
 {
     private readonly List<EmailOtpMessage> _items = [];
@@ -155,7 +184,10 @@ public sealed class EmailOtpFeed
         if (message is null) return false;
         lock (_gate)
         {
-            // Same subject+body within a minute is the same toast replayed.
+            if (!string.IsNullOrEmpty(message.ExternalId)
+                && _items.Any(item => item.ExternalId == message.ExternalId
+                    && item.AccountId == message.AccountId)) return false;
+            // Same subject+body within a minute is the same toast or poll replayed.
             if (_items.Any(item => item.Subject == message.Subject && item.Body == message.Body
                 && Math.Abs((item.ReceivedAt - message.ReceivedAt).TotalSeconds) < 60)) return false;
             _items.Insert(0, message);
@@ -163,6 +195,19 @@ public sealed class EmailOtpFeed
         }
         Changed?.Invoke();
         return true;
+    }
+
+    public IReadOnlyList<EmailOtpMessage> Filtered(Guid? accountId, bool verificationOnly)
+    {
+        lock (_gate)
+        {
+            IEnumerable<EmailOtpMessage> query = _items;
+            if (accountId is { } id)
+                query = query.Where(item => item.AccountId == id
+                    || (id == Guid.Empty && item.AccountId is null));
+            if (verificationOnly) query = query.Where(item => item.IsVerification || !string.IsNullOrEmpty(item.Code));
+            return query.ToList();
+        }
     }
 
     // Re-runs extraction on the message at index (preview "retry"). Returns the updated list index message, or null.

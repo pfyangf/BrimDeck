@@ -12,7 +12,7 @@ using BrimDeck.Core;
 namespace BrimDeck;
 
 // The authenticator page of the open panel. It only reads otp.dat (the same store the settings page writes) and shows
-// one code at a time, with the neighbouring accounts peeking above and below.
+// one code at a time. Previous / Next are the primary way to switch accounts; swipe stays as a secondary gesture.
 public partial class MainWindow
 {
     internal bool IsOtpPage => CurrentPage == DeckPage.Otp;
@@ -76,12 +76,23 @@ public partial class MainWindow
         }
         else
         {
-            bool room = height >= 200;
-            if (room && _otpIndex > 0) root.Children.Add(OtpPeek(_otpAccounts[_otpIndex - 1], above: true));
+            // Only peek neighbours when there is real height left for the focus card to stay fully visible.
+            bool room = height >= 280 && _otpAccounts.Count > 1;
+            if (room && _otpIndex > 0)
+            {
+                var peek = OtpPeek(_otpAccounts[_otpIndex - 1], above: true);
+                root.Children.Add(peek);
+            }
             var focus = OtpFocus(_otpAccounts[_otpIndex]);
             Grid.SetRow(focus, 1);
             root.Children.Add(focus);
-            if (room && _otpIndex < _otpAccounts.Count - 1)
+            if (_otpAccounts.Count > 1)
+            {
+                var nav = OtpNavBar();
+                Grid.SetRow(nav, 2);
+                root.Children.Add(nav);
+            }
+            else if (room && _otpIndex < _otpAccounts.Count - 1)
             {
                 var next = OtpPeek(_otpAccounts[_otpIndex + 1], above: false);
                 Grid.SetRow(next, 2);
@@ -192,13 +203,74 @@ public partial class MainWindow
         return stack;
     }
 
+    private FrameworkElement OtpNavBar()
+    {
+        var row = new Grid { Margin = new Thickness(8, 2, 8, 2) };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var prev = OtpNavButton(Loc.T("上一个", "Previous"), enabled: _otpIndex > 0, () => MoveOtp(-1));
+        prev.HorizontalAlignment = HorizontalAlignment.Left;
+        var next = OtpNavButton(Loc.T("下一个", "Next"), enabled: _otpIndex < _otpAccounts.Count - 1, () => MoveOtp(1));
+        next.HorizontalAlignment = HorizontalAlignment.Right;
+        Grid.SetColumn(next, 2);
+
+        // Compact neighbour labels between the buttons when height is tight (no peek rows).
+        if (ContentCanvas.Height < 280)
+        {
+            var mid = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+            if (_otpIndex > 0)
+            {
+                var above = UI.Centered(OtpAccounts.Label(_otpAccounts[_otpIndex - 1]), 10.5, UI.Tertiary);
+                above.Opacity = .55;
+                above.TextTrimming = TextTrimming.CharacterEllipsis;
+                above.MaxWidth = Math.Max(80, ContentCanvas.Width - 200);
+                mid.Children.Add(above);
+            }
+            if (_otpIndex < _otpAccounts.Count - 1)
+            {
+                var below = UI.Centered(OtpAccounts.Label(_otpAccounts[_otpIndex + 1]), 10.5, UI.Tertiary);
+                below.Opacity = .55;
+                below.TextTrimming = TextTrimming.CharacterEllipsis;
+                below.MaxWidth = Math.Max(80, ContentCanvas.Width - 200);
+                mid.Children.Add(below);
+            }
+            Grid.SetColumn(mid, 1);
+            row.Children.Add(mid);
+        }
+
+        row.Children.Add(prev);
+        row.Children.Add(next);
+        return row;
+    }
+
+    private Border OtpNavButton(string title, bool enabled, Action click)
+    {
+        var label = UI.Centered(title, 12.5, enabled ? UI.Primary : UI.Tertiary, FontWeights.SemiBold);
+        label.Margin = new Thickness(14, 8, 14, 8);
+        var border = new Border
+        {
+            Background = UI.Brush(PanelTheme.Hex("fill")),
+            CornerRadius = new CornerRadius(10),
+            Cursor = enabled ? Cursors.Hand : Cursors.Arrow,
+            Opacity = enabled ? 1 : .45,
+            IsEnabled = enabled,
+            Child = label
+        };
+        if (enabled)
+            border.MouseLeftButtonUp += (_, e) => { click(); e.Handled = true; };
+        AutomationProperties.SetName(border, title);
+        return border;
+    }
+
     private static FrameworkElement OtpPeek(OtpAccount account, bool above)
     {
-        var text = UI.Centered(OtpAccounts.Label(account), 12, UI.Tertiary);
+        var text = UI.Centered(OtpAccounts.Label(account), 11.5, UI.Tertiary);
         text.HorizontalAlignment = HorizontalAlignment.Center;
         text.TextTrimming = TextTrimming.CharacterEllipsis;
-        text.Opacity = .72;
-        text.Margin = new Thickness(24, above ? 0 : 6, 24, above ? 6 : 2);
+        text.Opacity = .55;
+        text.Margin = new Thickness(24, above ? 0 : 4, 24, above ? 4 : 0);
         return text;
     }
 
@@ -215,7 +287,11 @@ public partial class MainWindow
         _otpRing.Children.Clear();
         _otpRing.Children.Add(UI.Ring(left * 100d / account.Period, left <= 5 ? "#E0A050" : UI.Accent, 22, 2.2));
         bool copied = account.Id == _otpCopied && now < _otpCopiedUntil;
-        _otpHint.Text = copied ? Loc.T("已复制", "Copied") : Loc.T("点击复制 · 上下滑动切换", "Tap to copy · swipe to switch");
+        _otpHint.Text = copied
+            ? Loc.T("已复制", "Copied")
+            : (_otpAccounts.Count > 1
+                ? Loc.T("点击复制 · 用上一个 / 下一个切换", "Tap to copy · use Previous / Next to switch")
+                : Loc.T("点击复制", "Tap to copy"));
         _otpHint.Foreground = UI.Brush(copied ? UI.Accent : UI.Tertiary);
     }
 
@@ -229,12 +305,12 @@ public partial class MainWindow
 
     private void OtpDrag(object sender, MouseEventArgs e)
     {
-        if (sender is not UIElement surface || !surface.IsMouseCaptured) return;
+        // One account change per press — do not keep stepping while the pointer stays held.
+        if (sender is not UIElement surface || !surface.IsMouseCaptured || _otpDragged) return;
         double dy = e.GetPosition(surface).Y - _otpDragStart.Y;
-        if (Math.Abs(dy) < 42) return;
+        if (Math.Abs(dy) < 72) return;
         _otpDragged = true;
         MoveOtp(dy < 0 ? 1 : -1);
-        _otpDragStart = e.GetPosition(surface);
     }
 
     private void OtpRelease(object sender, MouseButtonEventArgs e)

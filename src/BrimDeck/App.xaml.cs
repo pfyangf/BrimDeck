@@ -23,6 +23,9 @@ public partial class App : Application
     public ProviderSecrets Secrets { get; private set; } = null!;
     public OtpStore Otp { get; private set; } = null!;
     public EmailOtpFeed MailCodes { get; } = new();
+    public MailAccountStore MailAccounts { get; private set; } = null!;
+    internal GraphMailClient? GraphMail { get; private set; }
+    internal MailInboxService? MailInbox { get; private set; }
     public Pricing Prices { get; private set; } = null!;
     public AppUpdates Updates { get; internal set; } = null!;
     // The main panel. It owns the tray icon, reads the usage data and takes the settings preview; every other chosen
@@ -107,6 +110,11 @@ public partial class App : Application
         Updates = new AppUpdates(BrimDeck.Updates.GitHubUpdates.Create(folder), folder);
         Secrets = new ProviderSecrets(folder);
         Otp = new OtpStore(folder, new DpapiProtector());
+        var mailProtector = new DpapiProtector();
+        MailAccounts = new MailAccountStore(folder, mailProtector);
+        GraphMail = new GraphMailClient(folder, mailProtector, () => Settings.MailOtpMsClientId, () => _settingsWindow);
+        MailInbox = new MailInboxService(Dispatcher, MailAccounts, GraphMail, MailCodes, () => Settings);
+        MailInbox.Polled += () => { foreach (var deck in Decks.ToList()) deck.NotifyMailOtp(); };
         Lyrics = new LyricsService(appleLyricsFile: Path.Combine(folder, "apple-music-lyrics.json"));
         Usage = new UsageService(new DesktopSources(), secrets: Secrets, quotaCache: Path.Combine(folder, ClaudeQuotaCache.FileName),
             kimiQuotaCache: Path.Combine(folder, KimiQuotaCache.FileName));
@@ -224,6 +232,7 @@ public partial class App : Application
         ScheduleDaylight();
         AssignDisplays();
         Toasts?.Apply(settings);
+        MailInbox?.Apply(settings);
         foreach (var deck in Decks.ToList()) { if (styleChanged) deck.MorphShape(); else deck.ApplySettings(); }
         QueueSave();
         CollapsedChanged();
@@ -321,6 +330,7 @@ public partial class App : Application
             foreach (var deck in Decks.ToList()) deck.NotifyMailOtp();
         };
         Toasts.Apply(Settings);
+        MailInbox?.Apply(Settings);
     }
     internal void StartMedia()
     {
@@ -445,7 +455,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Exiting = true; Lifetime.Cancel(); _save.Stop(); FinishWriting(); StopBackgroundUpdates(); DisplayPower.Uninstall(); Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemThemeChanged; _tray?.Dispose(); DisposeHotkeys(); WindowDrags?.Dispose(); _listener?.Unregister(null); _settingsEvent?.Dispose();
-        Toasts?.Dispose(); Media?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
+        MailInbox?.Dispose(); Toasts?.Dispose(); Media?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
     }
     [DllImport("shell32", CharSet = CharSet.Unicode)] private static extern int SetCurrentProcessExplicitAppUserModelID(string id);
 }

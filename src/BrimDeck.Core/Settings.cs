@@ -355,6 +355,8 @@ public sealed class DeckSettings
     public double MailOtpHeight { get; set; } = 240;
     // Watch Outlook / Windows Mail (and other classified mail apps) notification-center toasts for verification mails.
     public bool MailOtpOutlook { get; set; } = true;
+    // Azure AD public-client Application (client) ID for optional Microsoft Graph mailbox bind. Empty until the user pastes one.
+    public string MailOtpMsClientId { get; set; } = "";
     // The notch and the capsule each keep their own choices; the indicator only offers the playback progress.
     public bool NotchSummary { get; set; } = true;
     public bool NotchMusic { get; set; } = true;
@@ -654,6 +656,7 @@ public sealed class DeckSettings
         OtpHeight = double.IsFinite(OtpHeight) ? Math.Clamp(OtpHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 220;
         MailOtpWidth = double.IsFinite(MailOtpWidth) ? Math.Clamp(MailOtpWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 520;
         MailOtpHeight = double.IsFinite(MailOtpHeight) ? Math.Clamp(MailOtpHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        MailOtpMsClientId = (MailOtpMsClientId ?? "").Trim();
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         MonitorHeight = double.IsFinite(MonitorHeight) ? Math.Clamp(MonitorHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : MonitorSizes.Default.Height;
         PanelScale = PanelScales.Fit(PanelScale);

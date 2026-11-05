@@ -43,7 +43,23 @@ internal static class EmailOtpTests
         }
         finally { Loc.Use(previous); }
 
-        check("the mail page follows authenticator in the default switch", DeckPages.Order[^1] == DeckPage.Mail && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
+
+        var bound = new BoundMailAccount { Kind = MailAccountKind.Imap, Email = "a@example.com", DisplayName = "Alice", ImapHost = "imap.example.com" }.Normalize();
+        var boundMail = EmailOtp.FromBound(bound, "ext-1", "noreply@bank.com", "Your verification code", "Use 556677 to continue", when);
+        check("FromBound tags the account", boundMail.AccountId == bound.Id && boundMail.ExternalId == "ext-1" && boundMail.Code == "556677" && boundMail.IsVerification);
+        var ordinary = EmailOtp.FromBound(bound, "ext-2", null, "Weekly digest", "Nothing special here", when.AddMinutes(1));
+        check("ordinary bound mail has no code", ordinary.Code is null && !ordinary.IsVerification);
+        check("feed dedupes by external id", feed.Ingest(boundMail) && !feed.Ingest(boundMail with { Id = Guid.NewGuid() }));
+        check("filtered toast-only uses empty guid", feed.Filtered(Guid.Empty, false).All(item => item.AccountId is null));
+        check("filtered by account returns bound mail", feed.Filtered(bound.Id, false).Any(item => item.ExternalId == "ext-1"));
+        check("ordinary bound mail is kept", feed.Ingest(ordinary));
+        check("verification-only filter drops digests", feed.Filtered(bound.Id, true).All(item => item.IsVerification || !string.IsNullOrEmpty(item.Code)));
+
+        var roundtrip = BoundMailAccounts.Import(BoundMailAccounts.Export([bound]));
+        check("bound accounts round-trip", roundtrip.Count == 1 && roundtrip[0].Email == "a@example.com" && roundtrip[0].ImapHost == "imap.example.com");
+        check("imap presets include gmail", ImapPresets.Find("gmail")?.Host == "imap.gmail.com");
+
+                check("the mail page follows authenticator in the default switch", DeckPages.Order[^1] == DeckPage.Mail && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2,3]}""")!;
         check("an older page order gains the mail page", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail]));
     }
