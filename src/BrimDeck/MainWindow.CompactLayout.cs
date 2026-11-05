@@ -70,6 +70,11 @@ public partial class MainWindow
     // longer than the row scrolls through it once while it is shown (CompactAlertLayout.Scroll).
     partial void LayoutCompactAlert(CollapsedShape shape, bool alertVisible)
     {
+        if (_message is { } message)
+        {
+            LayoutMessageNotice(shape, message);
+            return;
+        }
         if (!alertVisible || _alert is not { } alert)
         {
             // A cleared notice leaves none of this file's regions behind.
@@ -147,6 +152,73 @@ public partial class MainWindow
         glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, At(0)));
         glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, At(start)));
         // Without animations the notice steps to its end once, when the glide would have finished.
+        if (Settings.Animations && SystemParameters.ClientAreaAnimation) glide.KeyFrames.Add(new SplineDoubleKeyFrame(-overflow, At(end), new KeySpline(.4, 0, .6, 1)));
+        else glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(-overflow, At(end)));
+        var clock = glide.CreateClock();
+        shift.ApplyAnimationClock(TranslateTransform.XProperty, clock);
+        double elapsed = Math.Clamp((Environment.TickCount64 - _alertSince!.Value.Since) / 1000d, 0, shown);
+        if (elapsed > 0) clock.Controller!.Seek(TimeSpan.FromSeconds(elapsed), TimeSeekOrigin.BeginTime);
+    }
+
+    // A QQ, WeChat or mail banner in the same row as a quota notice, without the quota ring: the app, then the banner text.
+    // Longer than the row, it scrolls once while it is shown, as the quota notice does.
+    private void LayoutMessageNotice(CollapsedShape shape, MessageNotice message)
+    {
+        if (_alertSince is not { } since || !ReferenceEquals(since.Alert, message)) _alertSince = (message, Environment.TickCount64);
+        if (_alertRendered is { } done && Equals(done.Shape, shape) && ReferenceEquals(done.Alert, message)
+            && CompactAlert.Children.Count > 0 && CompactAlert.Children[0] is FrameworkElement { Tag: var tag } && ReferenceEquals(tag, AlertRegionTag)) return;
+        CompactAlert.Children.Clear();
+        _alertRendered = (shape, message); _compactRendered = shape;
+        double scale = CompactMusicLayout.SafeScale(shape.Scale);
+        double width = CompactContentWidth(shape);
+        double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        double font = Math.Max(1, CompactMusicLayout.Half(11.5 * scale)), line = Math.Max(1, CompactMusicLayout.Whole(16 * scale));
+        string preview = MessageNotices.Preview(message.Title, message.Body);
+        var name = UI.Fixed(MessageNotices.AppName(message.App), font, line, UI.Primary, FontWeights.SemiBold);
+        var body = preview.Length > 0 ? UI.Fixed(preview, font, line, UI.Secondary) : null;
+        name.ToolTip = preview.Length > 0 ? preview : name.Text;
+        if (body is not null) body.ToolTip = preview;
+        double Natural(FrameworkElement element)
+        {
+            element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return Math.Ceiling(element.DesiredSize.Width * dpi - .001) / dpi;
+        }
+        if (ColumnFor(shape.Style))
+        {
+            double column = SnapDown(ColumnWidth(shape), dpi);
+            var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Width = column, Tag = AlertRegionTag };
+            foreach (var text in new[] { name, body })
+            {
+                if (text is null) continue;
+                text.ClearValue(WidthProperty); text.MaxWidth = column; text.TextTrimming = TextTrimming.CharacterEllipsis; text.TextAlignment = TextAlignment.Center;
+                text.HorizontalAlignment = HorizontalAlignment.Center;
+                stack.Children.Add(text);
+            }
+            CompactAlert.Children.Add(stack);
+            return;
+        }
+        double gap = CompactMusicLayout.Whole(8 * scale), row = line;
+        double nameWidth = Natural(name), bodyWidth = body is null ? 0 : Natural(body);
+        var parts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        if (nameWidth > 0) parts.Children.Add(CompactRegion(name, nameWidth, nameWidth, line, row, RegionAnchor.Left, dpi));
+        if (body is not null && bodyWidth > 0) parts.Children.Add(CompactRegion(body, bodyWidth + gap, bodyWidth, line, row, RegionAnchor.Left, dpi, gap));
+        parts.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double span = SnapDown(width, dpi), full = parts.DesiredSize.Width;
+        double overflow = Math.Max(0, Math.Ceiling((full - span) * dpi - .01) / dpi);
+        if (overflow <= 0) { CompactAlert.Children.Add(parts); parts.Tag = AlertRegionTag; return; }
+        var shift = new TranslateTransform();
+        parts.RenderTransform = shift;
+        var view = new Canvas { Width = span, Height = row, ClipToBounds = true, VerticalAlignment = VerticalAlignment.Center, Tag = AlertRegionTag };
+        Canvas.SetTop(parts, Snap((row - parts.DesiredSize.Height) / 2, dpi));
+        view.Children.Add(parts);
+        RenderOptions.SetClearTypeHint(parts, ClearTypeHint.Enabled);
+        CompactAlert.Children.Add(view);
+        double shown = _messageTimer.Interval.TotalSeconds;
+        var (start, end) = CompactAlertLayout.Scroll(overflow, shown);
+        static KeyTime At(double seconds) => KeyTime.FromTimeSpan(TimeSpan.FromSeconds(seconds));
+        var glide = new DoubleAnimationUsingKeyFrames { Duration = TimeSpan.FromSeconds(shown), FillBehavior = FillBehavior.HoldEnd };
+        glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, At(0)));
+        glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, At(start)));
         if (Settings.Animations && SystemParameters.ClientAreaAnimation) glide.KeyFrames.Add(new SplineDoubleKeyFrame(-overflow, At(end), new KeySpline(.4, 0, .6, 1)));
         else glide.KeyFrames.Add(new DiscreteDoubleKeyFrame(-overflow, At(end)));
         var clock = glide.CreateClock();

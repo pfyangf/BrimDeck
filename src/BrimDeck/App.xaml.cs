@@ -21,6 +21,7 @@ public partial class App : Application
     public SettingsStore Store { get; private set; } = null!;
     public UsageService Usage { get; private set; } = null!;
     public ProviderSecrets Secrets { get; private set; } = null!;
+    public OtpStore Otp { get; private set; } = null!;
     public Pricing Prices { get; private set; } = null!;
     public AppUpdates Updates { get; internal set; } = null!;
     // The main panel. It owns the tray icon, reads the usage data and takes the settings preview; every other chosen
@@ -32,6 +33,7 @@ public partial class App : Application
     private bool _arrangePending;
     // Every panel shows the one set of players, and their lyrics are looked up once.
     internal MediaSessions? Media { get; private set; }
+    internal ToastMirror? Toasts { get; private set; }
     internal event Action? MediaChanged;
     internal LyricsService Lyrics { get; private set; } = null!;
     // A window being dragged by its title bar or edge; the panels do not open on it (see MainWindow.TrackPointer).
@@ -103,6 +105,7 @@ public partial class App : Application
         Prices = new Pricing(folder);
         Updates = new AppUpdates(BrimDeck.Updates.GitHubUpdates.Create(folder), folder);
         Secrets = new ProviderSecrets(folder);
+        Otp = new OtpStore(folder, new DpapiProtector());
         Lyrics = new LyricsService(appleLyricsFile: Path.Combine(folder, "apple-music-lyrics.json"));
         Usage = new UsageService(new DesktopSources(), secrets: Secrets, quotaCache: Path.Combine(folder, ClaudeQuotaCache.FileName),
             kimiQuotaCache: Path.Combine(folder, KimiQuotaCache.FileName));
@@ -118,6 +121,7 @@ public partial class App : Application
         DisplayPower.Install(Dispatcher);
         _save.Tick += (_, _) => FlushSettings();
         ApplyTray();
+        StartMessageNotices();
         _settingsEvent = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
         _listener = ThreadPool.RegisterWaitForSingleObject(_settingsEvent, (_, _) => Dispatcher.BeginInvoke(ShowFromRelaunch), null, Timeout.Infinite, false);
         if (e.Args.Contains("--settings")) OpenSettings();
@@ -218,6 +222,7 @@ public partial class App : Application
         PanelTheme.Use(settings);
         ScheduleDaylight();
         AssignDisplays();
+        Toasts?.Apply(settings);
         foreach (var deck in Decks.ToList()) { if (styleChanged) deck.MorphShape(); else deck.ApplySettings(); }
         QueueSave();
         CollapsedChanged();
@@ -300,6 +305,16 @@ public partial class App : Application
             deck = new MainWindow(this, Deck) { Display = display };
             _otherDecks[id] = deck; deck.Show();
         }
+    }
+    private void StartMessageNotices()
+    {
+        if (Toasts is not null) return;
+        Toasts = new ToastMirror(Dispatcher);
+        Toasts.Arrived += notice =>
+        {
+            foreach (var deck in Decks.ToList()) deck.ShowMessage(notice);
+        };
+        Toasts.Apply(Settings);
     }
     internal void StartMedia()
     {
@@ -424,7 +439,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Exiting = true; Lifetime.Cancel(); _save.Stop(); FinishWriting(); StopBackgroundUpdates(); DisplayPower.Uninstall(); Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemThemeChanged; _tray?.Dispose(); DisposeHotkeys(); WindowDrags?.Dispose(); _listener?.Unregister(null); _settingsEvent?.Dispose();
-        Media?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
+        Toasts?.Dispose(); Media?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
     }
     [DllImport("shell32", CharSet = CharSet.Unicode)] private static extern int SetCurrentProcessExplicitAppUserModelID(string id);
 }

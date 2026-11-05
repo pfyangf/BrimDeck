@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     // Fires just after each second boundary while the collapsed clock shows seconds; it redraws only the clock.
     private readonly DispatcherTimer _seconds = new();
     private readonly DispatcherTimer _alertTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private readonly DispatcherTimer _messageTimer = new() { Interval = MessageNotices.VisibleFor };
     // Compact hover follows the cursor position rather than window mouse messages, which reach
     // this per-pixel transparent window unreliably over the nearly invisible strip around the surface.
     private bool _cursorInCompact, _trackPointer;
@@ -73,6 +74,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<string, int> _levels = new();
     private bool _levelsSeeded;
     private CompactAlertInfo? _alert;
+    private MessageNotice? _message;
     private DeckSettings Settings => _app.Settings;
     public bool IsExpanded => _expanded;
     public bool IsSuppressed => !_preview && (Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind) == WindowBehavior.Hide || HiddenByUser);
@@ -132,6 +134,7 @@ public partial class MainWindow : Window
         _clock.Tick += (_, _) => { UpdateClock(); ScheduleClock(); if (_expanded) RenderUsage(); else if (OffPeakChanged()) RenderCompact(); if (_lead is null) _app.CheckUpdatesIfDue(); };
         _seconds.Tick += (_, _) => { if (_compactClock is not null) _compactClock.Time = DateTime.Now; _seconds.Interval = SecondDelay(DateTime.Now); };
         _alertTimer.Tick += (_, _) => { _alertTimer.Stop(); _alert = null; RenderCompact(); if (!_expanded) SetExpanded(false); };
+        _messageTimer.Tick += (_, _) => { _messageTimer.Stop(); _message = null; RenderCompact(); if (!_expanded && _alert is null) SetExpanded(false); };
         // A new foreground context closes the panel directly (ApplySettings lays it out collapsed), so SetExpanded never sees the
         // panel turn from open to closed: the collapsed title is set to scroll its laps again here, as SetExpanded does.
         _host.ContextChanged += context =>
@@ -172,7 +175,7 @@ public partial class MainWindow : Window
             if (_lead is null) { _app.AssignDisplays(); await RefreshAutomaticallyAsync(); }
         };
         Closing += (_, e) => { if (!_app.Exiting && !_retiring) { e.Cancel = true; SetExpanded(false); } };
-        Closed += (_, _) => { CancelMove(); _escapeDismissal?.Dispose(); _virtualDesktops?.Dispose(); _host.Dispose(); _hover.Stop(); _leave.Stop(); _pointerTrack.Stop(); _pageSwitchHold.Stop(); _clock.Stop(); _seconds.Stop(); _refresh.Stop(); _alertTimer.Stop(); _clipSettle?.Stop(); };
+        Closed += (_, _) => { CancelMove(); _escapeDismissal?.Dispose(); _virtualDesktops?.Dispose(); _host.Dispose(); _hover.Stop(); _leave.Stop(); _pointerTrack.Stop(); _pageSwitchHold.Stop(); _clock.Stop(); _seconds.Stop(); _refresh.Stop(); _alertTimer.Stop(); _messageTimer.Stop(); _clipSettle?.Stop(); };
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) { WindowState = WindowState.Normal; SetExpanded(false); } };
         // The collapsed island opens on hover, so a right click there does nothing, except leave move mode.
         MouseWheel += PanelWheel;
@@ -254,6 +257,7 @@ public partial class MainWindow : Window
         ApplyLanguage();
         ApplyTheme();
         if (!Settings.QuotaAlerts && _alert is not null) ClearAlert();
+        if (_message is { } showing && !MessageNotices.Allows(Settings, showing.App)) ClearMessage();
         ApplySyncSchedule();
         ApplyMusicSettings();
         ApplySecondClock();
@@ -495,7 +499,7 @@ public partial class MainWindow : Window
         Compact.Width = Collapsed.ContentWidth;
         Compact.Height = Math.Max(0, 26 * Collapsed.Scale);
         ApplyCompactGeometry(Collapsed);
-        LayoutCompactAlert(Collapsed, _alert is not null);
+        LayoutCompactAlert(Collapsed, _message is not null || _alert is not null);
     }
     // Brings the surface, its layers, the shadow and every cached piece of content up to the current panel theme. XAML styles
     // follow the theme by themselves (DynamicResource); what code built with the old colors is built again by the renders that
@@ -561,10 +565,10 @@ public partial class MainWindow : Window
         foreach (var reading in _columnReadings) reading.SetRunning(false, false);
         _compactEqualizer = null; _compactMarquee = null; _quotaCarousel = null; _stripCarousel = null; _compactClock = null; _compactStrip = null;
         _columnCarousel = null; _columnReadings.Clear(); _columnStrips.Clear();
-        if (_alert is not null)
+        if (_message is not null || _alert is not null)
         {
             CompactAlert.Visibility = Visibility.Visible; CompactRings.Visibility = Visibility.Collapsed;
-            // LayoutCompactAlert (MainWindow.CompactLayout.cs) builds the alert row from _alert and sizes it for the shape.
+            // LayoutCompactAlert (MainWindow.CompactLayout.cs) builds the row from the message or the quota notice.
             ApplyCollapsedLayout();
             // The notice hides the system readings, which then need none.
             UpdateMonitorDemand();
@@ -603,6 +607,15 @@ public partial class MainWindow : Window
     internal void ShowAlert(AppEntry entry, string label, double used, DateTimeOffset? resetAt)
         => ShowAlert(new CompactAlertInfo(entry, entry.Name, label + " ", used, resetAt));
     internal void ClearAlert() { _alertTimer.Stop(); _alert = null; RenderCompact(); }
+    internal void ShowMessage(MessageNotice notice)
+    {
+        // A hidden panel would reveal the banner only later, when the panel returns, so the banner is dropped.
+        if (IsSuppressed || !MessageNotices.Allows(Settings, notice.App)) return;
+        _message = notice; _messageTimer.Stop(); _messageTimer.Start();
+        RenderCompact();
+        if (!_expanded && !IsSuppressed) SetExpanded(false);
+    }
+    internal void ClearMessage() { _messageTimer.Stop(); _message = null; RenderCompact(); }
     // No alert while the panel is suppressed (full-screen rule or hidden by the user): it would not be seen, and it must not
     // appear later when the panel shows again.
     private void ShowAlert(CompactAlertInfo alert)
