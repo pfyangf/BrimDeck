@@ -417,9 +417,11 @@ public partial class MainWindow
             CornerRadius = new CornerRadius(14),
             Cursor = Cursors.Hand,
             Margin = new Thickness(0, 0, 0, 8),
-            Child = stack
+            Child = stack,
+            Tag = "mail-nav"
         };
-        border.MouseLeftButtonUp += (_, e) => { if (!_mailDragged) { click(); e.Handled = true; } };
+        border.PreviewMouseLeftButtonDown += (_, e) => e.Handled = true;
+        border.MouseLeftButtonUp += (_, e) => { click(); e.Handled = true; };
         AutomationProperties.SetName(border, title);
         return border;
     }
@@ -434,8 +436,11 @@ public partial class MainWindow
             CornerRadius = new CornerRadius(10),
             Cursor = Cursors.Hand,
             Margin = new Thickness(0, 0, 8, 0),
-            Child = label
+            Child = label,
+            Tag = "mail-nav"
         };
+        // Prevent the page swipe CaptureMouse from eating chip clicks.
+        border.PreviewMouseLeftButtonDown += (_, e) => e.Handled = true;
         border.MouseLeftButtonUp += (_, e) => { click(); e.Handled = true; };
         AutomationProperties.SetName(border, title);
         return border;
@@ -494,9 +499,17 @@ public partial class MainWindow
     private void MailPress(object sender, MouseButtonEventArgs e)
     {
         if (sender is not UIElement surface || _mailItems.Count < 2) return;
+        if (e.OriginalSource is DependencyObject origin && FindMailTaggedAncestor(origin, "mail-nav") is not null) return;
         _mailDragStart = e.GetPosition(surface);
         _mailDragged = false;
         surface.CaptureMouse();
+    }
+
+    private static DependencyObject? FindMailTaggedAncestor(DependencyObject start, string tag)
+    {
+        for (DependencyObject? node = start; node is not null; node = VisualTreeHelper.GetParent(node))
+            if (node is FrameworkElement { Tag: string value } && value == tag) return node;
+        return null;
     }
 
     private void MailDrag(object sender, MouseEventArgs e)

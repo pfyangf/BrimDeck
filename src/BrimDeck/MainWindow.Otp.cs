@@ -256,10 +256,17 @@ public partial class MainWindow
             Cursor = enabled ? Cursors.Hand : Cursors.Arrow,
             Opacity = enabled ? 1 : .45,
             IsEnabled = enabled,
-            Child = label
+            Child = label,
+            // Tag marks nav chrome so the page swipe handlers ignore presses that start here.
+            Tag = "otp-nav"
         };
         if (enabled)
+        {
+            // Stop the page root from CaptureMouse on this press — otherwise MouseLeftButtonUp
+            // goes to the captured root and the button never fires (felt like "click several times").
+            border.PreviewMouseLeftButtonDown += (_, e) => e.Handled = true;
             border.MouseLeftButtonUp += (_, e) => { click(); e.Handled = true; };
+        }
         AutomationProperties.SetName(border, title);
         return border;
     }
@@ -298,9 +305,18 @@ public partial class MainWindow
     private void OtpPress(object sender, MouseButtonEventArgs e)
     {
         if (sender is not UIElement surface || _otpAccounts.Count < 2) return;
+        // Nav buttons handle their own press; do not start a swipe from them.
+        if (e.OriginalSource is DependencyObject origin && FindTaggedAncestor(origin, "otp-nav") is not null) return;
         _otpDragStart = e.GetPosition(surface);
         _otpDragged = false;
         surface.CaptureMouse();
+    }
+
+    private static DependencyObject? FindTaggedAncestor(DependencyObject start, string tag)
+    {
+        for (DependencyObject? node = start; node is not null; node = VisualTreeHelper.GetParent(node))
+            if (node is FrameworkElement { Tag: string value } && value == tag) return node;
+        return null;
     }
 
     private void OtpDrag(object sender, MouseEventArgs e)
