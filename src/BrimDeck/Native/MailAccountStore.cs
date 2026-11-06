@@ -6,7 +6,7 @@ using BrimDeck.Core;
 
 namespace BrimDeck.Native;
 
-// Bound mailboxes for the email-codes inbox. Account metadata and IMAP passwords are DPAPI-protected for the
+// Bound mailboxes for the email-codes inbox. Account metadata and IMAP/POP3 passwords are DPAPI-protected for the
 // current Windows user (same scope as otp.dat). MSAL tokens live in a separate cache file beside them.
 public sealed class MailAccountStore
 {

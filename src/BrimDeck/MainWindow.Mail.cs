@@ -10,7 +10,7 @@ using BrimDeck.Core;
 
 namespace BrimDeck;
 
-// Email verification / inbox page: toast OTP plus optional bound Microsoft Graph / IMAP mail, filterable by account.
+// Email verification / inbox page: toast OTP plus optional bound Microsoft Graph / IMAP / POP3 mail, filterable by account.
 public partial class MainWindow
 {
     internal bool IsMailPage => CurrentPage == DeckPage.Mail;
@@ -240,8 +240,8 @@ public partial class MainWindow
                 "Recent mail from bound accounts and verification notices appear here. Sync or add accounts in Settings › Verification › Email codes.");
         else
             hintText = Settings.MailOtpOutlook
-                ? Loc.T("Outlook / 邮件的验证码通知会出现在这里。也可在设置中绑定 Microsoft 或 IMAP 邮箱。",
-                    "Verification notices from Outlook / Mail appear here. You can also bind a Microsoft or IMAP mailbox in Settings.")
+                ? Loc.T("Outlook / 邮件的验证码通知会出现在这里。也可在设置中绑定 Microsoft、IMAP 或 POP3 邮箱。",
+                    "Verification notices from Outlook / Mail appear here. You can also bind a Microsoft, IMAP, or POP3 mailbox in Settings.")
                 : Loc.T("在设置 › 验证 › 邮箱验证码中打开通知监听，或绑定邮箱。",
                     "Turn on notification listening or bind a mailbox in Settings › Verification › Email codes.");
         var hint = UI.Centered(hintText, 12.5, UI.Secondary);

@@ -3,7 +3,7 @@ using BrimDeck.Core;
 
 namespace BrimDeck.Native;
 
-// Polls bound Microsoft Graph and IMAP mailboxes into EmailOtpFeed. Toast OTP arrives separately via ToastMirror.
+// Polls bound Microsoft Graph, IMAP, and POP3 mailboxes into EmailOtpFeed. Toast OTP arrives separately via ToastMirror.
 internal sealed class MailInboxService : IDisposable
 {
     private readonly Dispatcher _dispatcher;
@@ -74,7 +74,9 @@ internal sealed class MailInboxService : IDisposable
                     else
                     {
                         string secret = _accounts.ReadSecret(account.Id);
-                        messages = await ImapMailClient.FetchRecentAsync(account, secret, cancel: cancel).ConfigureAwait(false);
+                        messages = account.Kind == MailAccountKind.Pop3
+                            ? await Pop3MailClient.FetchRecentAsync(account, secret, cancel: cancel).ConfigureAwait(false)
+                            : await ImapMailClient.FetchRecentAsync(account, secret, cancel: cancel).ConfigureAwait(false);
                     }
                 }
                 catch (OperationCanceledException) { throw; }

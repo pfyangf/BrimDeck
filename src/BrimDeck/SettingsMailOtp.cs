@@ -7,7 +7,7 @@ using BrimDeck.Native;
 
 namespace BrimDeck;
 
-// "验证 › 邮箱验证码": toast listening + optional Microsoft Graph / IMAP mailbox bind for the island inbox.
+// "验证 › 邮箱验证码": toast listening + optional Microsoft Graph / IMAP / POP3 mailbox bind for the island inbox.
 public sealed partial class SettingsWindow
 {
     internal const int MailOtpSettingsPage = 12;
@@ -15,8 +15,8 @@ public sealed partial class SettingsWindow
     private void MailOtpSettings()
     {
         var intro = TextLine(Loc.T(
-            "两种来源可同时使用：① Windows 邮件通知（Outlook 等 toast，无需登录）；② 绑定 Microsoft 或 IMAP 邮箱后拉取近期收件箱。验证码在展开面板的邮箱页显示，密钥只保存在本机当前用户下。",
-            "Two sources can run together: (1) Windows mail notifications (Outlook and similar toasts, no sign-in); (2) bound Microsoft or IMAP mailboxes for a recent inbox. Codes show on the expanded email page. Secrets stay on this PC for the current Windows user."), 12.5, TextSecondary);
+            "两种来源可同时使用：① Windows 邮件通知（Outlook 等 toast，无需登录）；② 绑定 Microsoft、IMAP 或 POP3 邮箱后拉取近期收件箱。验证码在展开面板的邮箱页显示，密钥只保存在本机当前用户下。",
+            "Two sources can run together: (1) Windows mail notifications (Outlook and similar toasts, no sign-in); (2) bound Microsoft, IMAP, or POP3 mailboxes for a recent inbox. Codes show on the expanded email page. Secrets stay on this PC for the current Windows user."), 12.5, TextSecondary);
         intro.TextWrapping = TextWrapping.Wrap; intro.Margin = new Thickness(0, 0, 0, 18);
         _content.Children.Add(intro);
 
@@ -43,9 +43,10 @@ public sealed partial class SettingsWindow
         var addRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0) };
         var addMs = ActionButton(Loc.T("添加 Microsoft 账号", "Add Microsoft account"), AddMicrosoftAccount, primary: true);
         var addImap = ActionButton(Loc.T("添加 IMAP 邮箱", "Add IMAP mailbox"), () => AddImapAccount());
-        foreach (var button in new[] { addMs, addImap })
+        var addPop3 = ActionButton(Loc.T("添加 POP3 邮箱", "Add POP3 mailbox"), () => AddPop3Account());
+        foreach (var button in new[] { addMs, addImap, addPop3 })
         { button.Margin = new Thickness(0, 0, 8, 0); button.Padding = new Thickness(12, 6, 12, 6); }
-        addRow.Children.Add(addMs); addRow.Children.Add(addImap);
+        addRow.Children.Add(addMs); addRow.Children.Add(addImap); addRow.Children.Add(addPop3);
         Group(addRow);
 
         SectionTitle(Loc.T("Microsoft Graph", "Microsoft Graph"), help: () => Loc.T(
@@ -142,7 +143,7 @@ public sealed partial class SettingsWindow
 
     private void AddImapAccount()
     {
-        try { OpenImapBindDialog(); }
+        try { OpenServerBindDialog(MailAccountKind.Imap); }
         catch (Exception ex)
         {
             MessageBox.Show(this, ex.Message, Loc.T("无法打开 IMAP 绑定", "Could not open IMAP bind"),
@@ -150,11 +151,23 @@ public sealed partial class SettingsWindow
         }
     }
 
-    private void OpenImapBindDialog()
+    private void AddPop3Account()
     {
+        try { OpenServerBindDialog(MailAccountKind.Pop3); }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, Loc.T("无法打开 POP3 绑定", "Could not open POP3 bind"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void OpenServerBindDialog(MailAccountKind kind)
+    {
+        bool pop3 = kind == MailAccountKind.Pop3;
+        string protocol = pop3 ? "POP3" : "IMAP";
         var dialog = new Window
         {
-            Title = Loc.T("添加 IMAP 邮箱", "Add IMAP mailbox"),
+            Title = Loc.T($"添加 {protocol} 邮箱", $"Add {protocol} mailbox"),
             Owner = this, Width = 440, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
             FontFamily = UI.PanelFont, Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary),
@@ -166,10 +179,21 @@ public sealed partial class SettingsWindow
 
         var panel = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
         var presetBox = new ComboBox { Margin = new Thickness(0, 4, 0, 12), MinHeight = 32 };
-        foreach (var preset in ImapPresets.All)
+        if (pop3)
         {
-            string title = preset.Id == "custom" ? Loc.T("自定义 IMAP", "Custom IMAP") : preset.Title;
-            presetBox.Items.Add(new ComboBoxItem { Content = title, Tag = preset.Id });
+            foreach (var preset in Pop3Presets.All)
+            {
+                string title = preset.Id == "custom" ? Loc.T("自定义 POP3", "Custom POP3") : preset.Title;
+                presetBox.Items.Add(new ComboBoxItem { Content = title, Tag = preset.Id });
+            }
+        }
+        else
+        {
+            foreach (var preset in ImapPresets.All)
+            {
+                string title = preset.Id == "custom" ? Loc.T("自定义 IMAP", "Custom IMAP") : preset.Title;
+                presetBox.Items.Add(new ComboBoxItem { Content = title, Tag = preset.Id });
+            }
         }
         presetBox.SelectedIndex = 0;
 
@@ -177,22 +201,37 @@ public sealed partial class SettingsWindow
         var user = Field(); AutomationProperties.SetName(user, Loc.T("用户名", "Username"));
         var password = new PasswordBox { Style = (Style)FindResource("SettingsPasswordField"), Margin = new Thickness(0, 4, 0, 12), MaxLength = 256 };
         AutomationProperties.SetName(password, Loc.T("密码或授权码", "Password or app password"));
-        var host = Field(); AutomationProperties.SetName(host, Loc.T("IMAP 服务器", "IMAP server"));
-        var port = Field(); port.Text = "993"; AutomationProperties.SetName(port, Loc.T("端口", "Port"));
+        var host = Field(); AutomationProperties.SetName(host, Loc.T($"{protocol} 服务器", $"{protocol} server"));
+        var port = Field(); port.Text = pop3 ? "995" : "993"; AutomationProperties.SetName(port, Loc.T("端口", "Port"));
         var ssl = new CheckBox { Content = Loc.T("SSL/TLS", "SSL/TLS"), IsChecked = true, Margin = new Thickness(0, 0, 0, 12), Foreground = UI.Brush(TextPrimary) };
         var hint = TextLine("", 12, TextTertiary); hint.TextWrapping = TextWrapping.Wrap; hint.Margin = new Thickness(0, 0, 0, 8);
 
         void ApplyPreset()
         {
             string id = (presetBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "custom";
-            var preset = ImapPresets.Find(id);
-            if (preset is null) return;
-            hint.Text = Loc.T(preset.HintZh, preset.HintEn);
-            if (preset.Id != "custom")
+            if (pop3)
             {
-                host.Text = preset.Host;
-                port.Text = preset.Port.ToString();
-                ssl.IsChecked = preset.Ssl;
+                var preset = Pop3Presets.Find(id);
+                if (preset is null) return;
+                hint.Text = Loc.T(preset.HintZh, preset.HintEn);
+                if (preset.Id != "custom")
+                {
+                    host.Text = preset.Host;
+                    port.Text = preset.Port.ToString();
+                    ssl.IsChecked = preset.Ssl;
+                }
+            }
+            else
+            {
+                var preset = ImapPresets.Find(id);
+                if (preset is null) return;
+                hint.Text = Loc.T(preset.HintZh, preset.HintEn);
+                if (preset.Id != "custom")
+                {
+                    host.Text = preset.Host;
+                    port.Text = preset.Port.ToString();
+                    ssl.IsChecked = preset.Ssl;
+                }
             }
         }
         presetBox.SelectionChanged += (_, _) => ApplyPreset();
@@ -204,7 +243,7 @@ public sealed partial class SettingsWindow
         panel.Children.Add(Labeled(Loc.T("用户名（可空，默认邮箱）", "Username (optional, defaults to email)"), user));
         panel.Children.Add(TextLine(Loc.T("密码 / 授权码 / 应用专用密码", "Password / auth code / app password"), 12, TextSecondary));
         panel.Children.Add(password);
-        panel.Children.Add(Labeled(Loc.T("IMAP 服务器", "IMAP server"), host));
+        panel.Children.Add(Labeled(Loc.T($"{protocol} 服务器", $"{protocol} server"), host));
         panel.Children.Add(Labeled(Loc.T("端口", "Port"), port));
         panel.Children.Add(ssl);
         panel.Children.Add(hint);
@@ -215,19 +254,20 @@ public sealed partial class SettingsWindow
         cancel.Style = (Style)dialog.FindResource("SettingsOutlineButton"); cancel.IsCancel = true;
         save = ActionButton(Loc.T("绑定", "Bind"), async () =>
         {
+            int fallbackPort = pop3 ? 995 : 993;
             var account = new BoundMailAccount
             {
-                Kind = MailAccountKind.Imap,
+                Kind = kind,
                 Email = (email.Text ?? "").Trim(),
                 DisplayName = (email.Text ?? "").Trim(),
                 Username = string.IsNullOrWhiteSpace(user.Text) ? null : user.Text.Trim(),
                 ImapHost = (host.Text ?? "").Trim(),
-                ImapPort = int.TryParse(port.Text, out int p) ? p : 993,
+                ImapPort = int.TryParse(port.Text, out int parsed) ? parsed : fallbackPort,
                 ImapSsl = ssl.IsChecked != false
             }.Normalize();
             if (account.Email.Length == 0 || account.ImapHost is null || account.ImapHost.Length == 0)
             {
-                MessageBox.Show(dialog, Loc.T("请填写邮箱地址和 IMAP 服务器。", "Enter the email address and IMAP server."),
+                MessageBox.Show(dialog, Loc.T($"请填写邮箱地址和 {protocol} 服务器。", $"Enter the email address and {protocol} server."),
                     dialog.Title, MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -235,7 +275,8 @@ public sealed partial class SettingsWindow
             try
             {
                 if (save is not null) save.IsEnabled = false;
-                await ImapMailClient.TestAsync(account, secret).ConfigureAwait(true);
+                if (pop3) await Pop3MailClient.TestAsync(account, secret).ConfigureAwait(true);
+                else await ImapMailClient.TestAsync(account, secret).ConfigureAwait(true);
                 var list = _app.MailAccounts.Load().ToList();
                 list.Add(account);
                 _app.MailAccounts.Save(list);
@@ -245,7 +286,7 @@ public sealed partial class SettingsWindow
             }
             catch (Exception ex)
             {
-                MessageBox.Show(dialog, ex.Message, Loc.T("无法连接 IMAP", "IMAP connection failed"),
+                MessageBox.Show(dialog, ex.Message, Loc.T($"无法连接 {protocol}", $"{protocol} connection failed"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally { if (save is not null) save.IsEnabled = true; }

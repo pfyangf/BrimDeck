@@ -59,6 +59,21 @@ internal static class EmailOtpTests
         check("bound accounts round-trip", roundtrip.Count == 1 && roundtrip[0].Email == "a@example.com" && roundtrip[0].ImapHost == "imap.example.com");
         check("imap presets include gmail", ImapPresets.Find("gmail")?.Host == "imap.gmail.com");
 
+        var pop3 = new BoundMailAccount { Kind = MailAccountKind.Pop3, Email = "b@example.com", DisplayName = "Bob", ImapHost = "pop.example.com", ImapPort = 995 }.Normalize();
+        check("pop3 kind label", pop3.KindLabel == "POP3");
+        check("pop3 default port stays 995", pop3.ImapPort == 995);
+        var badPort = new BoundMailAccount { Kind = MailAccountKind.Pop3, Email = "c@example.com", ImapHost = "pop.example.com", ImapPort = 0 }.Normalize();
+        check("pop3 invalid port falls back to 995", badPort.ImapPort == 995);
+        var popRound = BoundMailAccounts.Import(BoundMailAccounts.Export([bound, pop3]));
+        check("imap and pop3 accounts round-trip together",
+            popRound.Count == 2
+            && popRound[0].Kind == MailAccountKind.Imap && popRound[0].ImapHost == "imap.example.com"
+            && popRound[1].Kind == MailAccountKind.Pop3 && popRound[1].ImapHost == "pop.example.com" && popRound[1].ImapPort == 995);
+        check("legacy imap json still loads as imap",
+            BoundMailAccounts.Import("""[{"id":"11111111-1111-1111-1111-111111111111","kind":1,"email":"old@example.com","imapHost":"imap.old.com","imapPort":993,"imapSsl":true}]""")[0].Kind == MailAccountKind.Imap);
+        check("pop3 presets include gmail", Pop3Presets.Find("gmail")?.Host == "pop.gmail.com" && Pop3Presets.Find("gmail")?.Port == 995);
+        check("pop3 presets include qq", Pop3Presets.Find("qq")?.Host == "pop.qq.com");
+
                 check("the mail page stays after authenticator", DeckPages.Order.ToList().IndexOf(DeckPage.Mail) == DeckPages.Order.ToList().IndexOf(DeckPage.Otp) + 1 && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2,3]}""")!;
         check("an older page order gains the mail and utility pages", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail, DeckPage.Messages, DeckPage.Alarm, DeckPage.Pomodoro, DeckPage.Memo, DeckPage.Shortcuts, DeckPage.Tools]));

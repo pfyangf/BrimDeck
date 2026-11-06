@@ -133,7 +133,7 @@ public static partial class EmailOtp
     [GeneratedRegex(@"[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex FromAddress();
 
-    // A message fetched from a bound Microsoft Graph or IMAP mailbox. Code is filled only when the mail looks like a verification.
+    // A message fetched from a bound Microsoft Graph, IMAP, or POP3 mailbox. Code is filled only when the mail looks like a verification.
     public static EmailOtpMessage FromBound(
         BoundMailAccount account,
         string externalId,
@@ -160,7 +160,7 @@ public static partial class EmailOtp
     }
 }
 
-// Newest mails from toasts and bound mailboxes (Graph / IMAP). Keeps only Capacity entries.
+// Newest mails from toasts and bound mailboxes (Graph / IMAP / POP3). Keeps only Capacity entries.
 public sealed class EmailOtpFeed
 {
     private readonly List<EmailOtpMessage> _items = [];
