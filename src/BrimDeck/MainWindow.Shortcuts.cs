@@ -71,7 +71,7 @@ public partial class MainWindow
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 string name = string.IsNullOrWhiteSpace(item.Name) ? item.Target : item.Name;
-                // Icon + name + path (secondary line). Path also stays in the edit dialog.
+                // List shows icon + name only; the path stays in the tooltip and the edit dialog.
                 var left = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -80,10 +80,7 @@ public partial class MainWindow
                     ToolTip = item.Target
                 };
                 left.Children.Add(ShortcutGlyph(item.Target, name));
-                var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-                text.Children.Add(UI.Centered(name, 13, UI.Primary, FontWeights.SemiBold));
-                text.Children.Add(UI.Line(item.Target, 11, UI.Tertiary));
-                left.Children.Add(text);
+                left.Children.Add(UI.Centered(name, 13, UI.Primary, FontWeights.SemiBold));
                 left.MouseLeftButtonUp += (_, e) => { LaunchShortcut(item); e.Handled = true; };
                 grid.Children.Add(left);
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
