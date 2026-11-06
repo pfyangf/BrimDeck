@@ -504,6 +504,12 @@ public sealed partial class SettingsWindow : Window
                     DeckPage.Monitor => (DefaultDeckPage.Monitor, Loc.T("系统监控", "System monitor")),
                     DeckPage.Otp => (DefaultDeckPage.Otp, Loc.T("验证码", "Authenticator")),
                     DeckPage.Mail => (DefaultDeckPage.Mail, Loc.T("邮箱验证码", "Email codes")),
+                    DeckPage.Messages => (DefaultDeckPage.Messages, Loc.T("消息", "Messages")),
+                    DeckPage.Alarm => (DefaultDeckPage.Alarm, Loc.T("闹钟", "Alarms")),
+                    DeckPage.Pomodoro => (DefaultDeckPage.Pomodoro, Loc.T("番茄钟", "Pomodoro")),
+                    DeckPage.Memo => (DefaultDeckPage.Memo, Loc.T("备忘录", "Memos")),
+                    DeckPage.Shortcuts => (DefaultDeckPage.Shortcuts, Loc.T("快捷方式", "Shortcuts")),
+                    DeckPage.Tools => (DefaultDeckPage.Tools, Loc.T("小工具", "Tools")),
                     _ => (DefaultDeckPage.Usage, Loc.T("AI 用量", "AI usage"))
                 });
             filling = true;
@@ -525,6 +531,12 @@ public sealed partial class SettingsWindow : Window
                 DeckPage.Monitor => SizeRow(Loc.T("显示系统监控", "Show system monitor"), Loc.T("系统监控", "system monitor"), page, S.MonitorPage, value => { Change(s => s.MonitorPage = value); FillStarts(); }, Collect(MonitorSizeControls), pages, FillStarts),
                 DeckPage.Otp => SizeRow(Loc.T("显示验证码", "Show authenticator"), Loc.T("验证码", "authenticator"), page, S.OtpPage, value => { Change(s => s.OtpPage = value); FillStarts(); }, Collect(OtpSizeControls), pages, FillStarts),
                 DeckPage.Mail => SizeRow(Loc.T("显示邮箱验证码", "Show email codes"), Loc.T("邮箱验证码", "email codes"), page, S.MailOtpPage, value => { Change(s => s.MailOtpPage = value); FillStarts(); }, Collect(MailOtpSizeControls), pages, FillStarts),
+                DeckPage.Messages => SizeRow(Loc.T("显示消息", "Show messages"), Loc.T("消息", "messages"), page, S.MessagesPage, value => { Change(s => s.MessagesPage = value); FillStarts(); }, Collect(MessagesSizeControls), pages, FillStarts),
+                DeckPage.Alarm => SizeRow(Loc.T("显示闹钟", "Show alarms"), Loc.T("闹钟", "alarms"), page, S.AlarmPage, value => { Change(s => s.AlarmPage = value); FillStarts(); }, Collect(AlarmSizeControls), pages, FillStarts),
+                DeckPage.Pomodoro => SizeRow(Loc.T("显示番茄钟", "Show pomodoro"), Loc.T("番茄钟", "pomodoro"), page, S.PomodoroPage, value => { Change(s => s.PomodoroPage = value); FillStarts(); }, Collect(PomodoroSizeControls), pages, FillStarts),
+                DeckPage.Memo => SizeRow(Loc.T("显示备忘录", "Show memos"), Loc.T("备忘录", "memos"), page, S.MemoPage, value => { Change(s => s.MemoPage = value); FillStarts(); }, Collect(MemoSizeControls), pages, FillStarts),
+                DeckPage.Shortcuts => SizeRow(Loc.T("显示快捷方式", "Show shortcuts"), Loc.T("快捷方式", "shortcuts"), page, S.ShortcutsPage, value => { Change(s => s.ShortcutsPage = value); FillStarts(); }, Collect(ShortcutsSizeControls), pages, FillStarts),
+                DeckPage.Tools => SizeRow(Loc.T("显示小工具", "Show tools"), Loc.T("小工具", "tools"), page, S.ToolsPage, value => { Change(s => s.ToolsPage = value); FillStarts(); }, Collect(ToolsSizeControls), pages, FillStarts),
                 _ => SizeRow(Loc.T("显示 AI 用量", "Show AI usage"), Loc.T("AI 用量", "AI usage"), page, S.UsagePage, value => { Change(s => s.UsagePage = value); FillStarts(); }, Collect(UsageSizes), pages, FillStarts)
             });
         UpdateDividers(pages);
@@ -645,11 +657,11 @@ public sealed partial class SettingsWindow : Window
                     // The clock goes back to the one the panel theme suggests, as choosing the theme gives.
                     PanelThemes.ApplyClock(PanelTheme.Current,s);break;
                 case 2:s.UsagePage=true;s.MusicPage=defaults.MusicPage;s.DefaultPage=defaults.DefaultPage;s.RightClickSettings=defaults.RightClickSettings;s.Width=defaults.Width;s.Height=defaults.Height;s.QuickSize=null;s.MusicWidth=defaults.MusicWidth;s.MusicHeight=defaults.MusicHeight;s.ExpandHotkey=defaults.ExpandHotkey;s.ResizeHotkey=defaults.ResizeHotkey;s.MouseWheel=defaults.MouseWheel;s.ExpandAtPointer=defaults.ExpandAtPointer;
-                    s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.OtpPage=defaults.OtpPage;s.OtpWidth=defaults.OtpWidth;s.OtpHeight=defaults.OtpHeight;s.MailOtpPage=defaults.MailOtpPage;s.MailOtpWidth=defaults.MailOtpWidth;s.MailOtpHeight=defaults.MailOtpHeight;s.PageOrder=defaults.PageOrder;break;
+                    s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.OtpPage=defaults.OtpPage;s.OtpWidth=defaults.OtpWidth;s.OtpHeight=defaults.OtpHeight;s.MailOtpPage=defaults.MailOtpPage;s.MailOtpWidth=defaults.MailOtpWidth;s.MailOtpHeight=defaults.MailOtpHeight;s.MessagesPage=defaults.MessagesPage;s.MessagesWidth=defaults.MessagesWidth;s.MessagesHeight=defaults.MessagesHeight;s.AlarmPage=defaults.AlarmPage;s.AlarmWidth=defaults.AlarmWidth;s.AlarmHeight=defaults.AlarmHeight;s.PomodoroPage=defaults.PomodoroPage;s.PomodoroWidth=defaults.PomodoroWidth;s.PomodoroHeight=defaults.PomodoroHeight;s.MemoPage=defaults.MemoPage;s.MemoWidth=defaults.MemoWidth;s.MemoHeight=defaults.MemoHeight;s.ShortcutsPage=defaults.ShortcutsPage;s.ShortcutsWidth=defaults.ShortcutsWidth;s.ShortcutsHeight=defaults.ShortcutsHeight;s.ToolsPage=defaults.ToolsPage;s.ToolsWidth=defaults.ToolsWidth;s.ToolsHeight=defaults.ToolsHeight;s.PageOrder=defaults.PageOrder;break;
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;
                     s.CompactMonitor=defaults.CompactMonitor;s.CompactMonitorItems=defaults.CompactMonitorItems;s.CompactReadings=defaults.CompactReadings;s.NotchAutoWidth=defaults.NotchAutoWidth;s.CapsuleAutoWidth=defaults.CapsuleAutoWidth;s.MonitorTemperatures=defaults.MonitorTemperatures;s.MonitorStorage=defaults.MonitorStorage;s.MonitorPower=defaults.MonitorPower;break;
                 // The current theme's application colors go back to its own; the other themes keep what was saved for them.
-                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.MessageNotices=defaults.MessageNotices;s.NoticeQq=defaults.NoticeQq;s.NoticeWeChat=defaults.NoticeWeChat;s.NoticeMail=defaults.NoticeMail;s.IncludeWsl=defaults.IncludeWsl;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
+                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.MessageNotices=defaults.MessageNotices;s.NoticeQq=defaults.NoticeQq;s.NoticeWeChat=defaults.NoticeWeChat;s.NoticeMail=defaults.NoticeMail;s.NoticeLark=defaults.NoticeLark;s.NoticeDingTalk=defaults.NoticeDingTalk;s.NoticeWeCom=defaults.NoticeWeCom;s.IncludeWsl=defaults.IncludeWsl;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
                 case 5:s.EqualizerAlways=defaults.EqualizerAlways;s.EqualizerBars=defaults.EqualizerBars;s.EqualizerMode=defaults.EqualizerMode;s.EqualizerColor=defaults.EqualizerColor;s.EqualizerCustomColor=defaults.EqualizerCustomColor;
                     s.MusicText=defaults.MusicText;s.MusicEqualizerBars=defaults.MusicEqualizerBars;s.MusicTrackNotice=defaults.MusicTrackNotice;s.MusicPausedHide=defaults.MusicPausedHide;s.MusicInstrumentalTitle=defaults.MusicInstrumentalTitle;s.MusicCompactCover=defaults.MusicCompactCover;s.MusicPageCover=defaults.MusicPageCover;s.LyricsEnabled=defaults.LyricsEnabled;
                     s.MusicLyricColor=defaults.MusicLyricColor;s.MusicLyricCustomColor=defaults.MusicLyricCustomColor;break;
@@ -724,11 +736,14 @@ public sealed partial class SettingsWindow : Window
         access.TextWrapping = TextWrapping.Wrap; access.MaxWidth = 480;
         var check = ActionButton(Loc.T("检查通知访问", "Check notification access"), () => _app.Toasts?.RequestAccess(() => { if (_page == 3) ShowPage(3); }));
         AutomationProperties.SetName(check, Loc.T("检查通知访问", "Check notification access"));
-        Group(Toggle(Loc.T("QQ、微信和邮件", "QQ, WeChat and mail"), S.MessageNotices, v => Change(s => s.MessageNotices = v), help:
-            Loc.T("开启后，这三个应用发到 Windows 通知中心的横幅会显示在收起的刘海或胶囊上，大约 6 秒后恢复。只读取系统已经弹出的通知，不读取聊天记录，也不点击或清除这些通知。QQ 音乐不会当作 QQ。微信若只使用自己的弹窗、不发 Windows 通知，这里看不到。需要允许 BrimDeck 访问通知，并在各应用里打开系统通知。详见说明文档。",
-                "When on, banners these three apps send to Windows notification center show on the collapsed notch or capsule for about 6 seconds. Only banners Windows already shows are read; chats are not read, and the banners are not clicked or dismissed. QQ Music is not treated as QQ. WeChat is missed when it uses only its own popup and posts no Windows notification. Allow BrimDeck to access notifications, and turn on system notifications in each app. See the guide.")),
+        Group(Toggle(Loc.T("消息横幅", "Message banners"), S.MessageNotices, v => Change(s => s.MessageNotices = v), help:
+            Loc.T("开启后，所选应用发到 Windows 通知中心的横幅会显示在收起的刘海或胶囊上，大约 6 秒后恢复，并进入消息页。只读取系统已经弹出的通知，不读取聊天记录，也不点击或清除这些通知。QQ 音乐不会当作 QQ。应用若只用自己的弹窗、不发 Windows 通知，这里看不到。需要允许 BrimDeck 访问通知。",
+                "When on, banners from the selected apps show on the collapsed notch or capsule for about 6 seconds and appear on the Messages page. Only Windows banners are read; chats are not. Apps that use only their own popups are missed. Allow BrimDeck notification access.")),
             Toggle(Loc.T("QQ", "QQ"), S.NoticeQq, v => Change(s => s.NoticeQq = v)),
             Toggle(Loc.T("微信", "WeChat"), S.NoticeWeChat, v => Change(s => s.NoticeWeChat = v)),
+            Toggle(Loc.T("飞书 / Lark", "Lark / Feishu"), S.NoticeLark, v => Change(s => s.NoticeLark = v)),
+            Toggle(Loc.T("钉钉", "DingTalk"), S.NoticeDingTalk, v => Change(s => s.NoticeDingTalk = v)),
+            Toggle(Loc.T("企业微信", "WeCom"), S.NoticeWeCom, v => Change(s => s.NoticeWeCom = v)),
             Toggle(Loc.T("邮件", "Mail"), S.NoticeMail, v => Change(s => s.NoticeMail = v)),
             Row(Loc.T("通知访问", "Notification access"), check, access, () => Loc.T(
                 "使用 Windows 公开的通知监听接口读取操作中心里的横幅。未打包的桌面应用订阅不到“通知已变化”，因此大约每 2 秒读取一次；读不到时改为约每 15 秒重试。通知正文不会写入日志或设置。",

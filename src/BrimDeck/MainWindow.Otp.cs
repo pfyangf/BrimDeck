@@ -46,11 +46,7 @@ public partial class MainWindow
         if (OtpContent is null) return;
         bool shown = OtpContent.IsVisible && _expanded && !_preview;
         RefreshStatus();
-        UsageContent.Visibility = Visibility.Collapsed;
-        MonitorContent.Visibility = Visibility.Collapsed;
-        MusicContent.Visibility = Visibility.Collapsed;
-        MailContent.Visibility = Visibility.Collapsed;
-        OtpContent.Visibility = Visibility.Visible;
+        ShowOnlyPage(OtpContent);
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
         ClockLabel.Visibility = Visibility.Visible;

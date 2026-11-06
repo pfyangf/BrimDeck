@@ -58,6 +58,12 @@
               <Grid Grid.Row="1" x:Name="MusicContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="OtpContent" Visibility="Collapsed" Margin="8,0,8,8"/>
               <Grid Grid.Row="1" x:Name="MailContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="MessagesContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="AlarmContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="PomodoroContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="MemoContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="ShortcutsContent" Visibility="Collapsed" Margin="8,0,8,8"/>
+              <Grid Grid.Row="1" x:Name="ToolsContent" Visibility="Collapsed" Margin="8,0,8,8"/>
               <!-- What a rebuilt usage or media page replaced, while it leaves (PageHandover). It spans the header row too and is
                    placed where the old content was: the next page's header row may be taller or shorter. -->
               <Grid Grid.Row="0" Grid.RowSpan="2" x:Name="LeavingContent"/>
@@ -92,6 +98,24 @@
                 </Button>
                 <Button x:Name="MailPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="MailPage_Click">
                   <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 3,6 H 21 V 18 H 3 Z M 3,6 L 12,13 L 21,6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="MessagesPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="MessagesPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 4,5 H 20 V 15 H 10 L 6,19 V 15 H 4 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="AlarmPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="AlarmPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 12,4 A 8,8 0 1 1 11.9,4 M 12,8 V 12 L 15,14 M 5,3 L 2,6 M 19,3 L 22,6" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="PomodoroPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="PomodoroPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 12,3 A 9,9 0 1 1 11.9,3 M 12,7 V 12 M 9,3 H 15" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="MemoPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="MemoPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 6,3 H 18 V 21 H 6 Z M 9,8 H 15 M 9,12 H 15 M 9,16 H 13" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="ShortcutsPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="ShortcutsPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 7,4 H 17 L 21,12 L 17,20 H 7 L 3,12 Z M 10,12 H 14" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
+                </Button>
+                <Button x:Name="ToolsPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="ToolsPage_Click">
+                  <Viewbox Width="16" Height="16"><Canvas Width="24" Height="24"><Path Data="M 14,4 L 20,10 L 10,20 L 4,20 L 4,14 Z M 12,6 L 18,12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.65" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/></Canvas></Viewbox>
                 </Button>
                  </StackPanel>
                  </Grid>

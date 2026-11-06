@@ -40,8 +40,8 @@ public sealed record FullscreenRule(string Name = "", string Path = "")
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Otp, Mail }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Otp, Mail }
+public enum DeckPage { Usage, Music, Monitor, Otp, Mail, Messages, Alarm, Pomodoro, Memo, Shortcuts, Tools }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Otp, Mail, Messages, Alarm, Pomodoro, Memo, Shortcuts, Tools }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -355,6 +355,30 @@ public sealed class DeckSettings
     public double MailOtpHeight { get; set; } = 240;
     // Watch Outlook / Windows Mail (and other classified mail apps) notification-center toasts for verification mails.
     public bool MailOtpOutlook { get; set; } = true;
+    // Extra island pages (off until the user turns them on). Sizes follow DeckPages.
+    public bool MessagesPage { get; set; }
+    public double MessagesWidth { get; set; } = 520;
+    public double MessagesHeight { get; set; } = 240;
+    public bool AlarmPage { get; set; }
+    public double AlarmWidth { get; set; } = 480;
+    public double AlarmHeight { get; set; } = 240;
+    public bool PomodoroPage { get; set; }
+    public double PomodoroWidth { get; set; } = 440;
+    public double PomodoroHeight { get; set; } = 220;
+    public int PomodoroFocusMinutes { get; set; } = 25;
+    public int PomodoroBreakMinutes { get; set; } = 5;
+    public int PomodoroLongBreakMinutes { get; set; } = 15;
+    public int PomodoroLongEvery { get; set; } = 4;
+    public bool PomodoroNotify { get; set; } = true;
+    public bool MemoPage { get; set; }
+    public double MemoWidth { get; set; } = 480;
+    public double MemoHeight { get; set; } = 240;
+    public bool ShortcutsPage { get; set; }
+    public double ShortcutsWidth { get; set; } = 480;
+    public double ShortcutsHeight { get; set; } = 240;
+    public bool ToolsPage { get; set; }
+    public double ToolsWidth { get; set; } = 480;
+    public double ToolsHeight { get; set; } = 240;
     // Azure AD public-client Application (client) ID for optional Microsoft Graph mailbox bind. Empty until the user pastes one.
     public string MailOtpMsClientId { get; set; } = "";
     // The notch and the capsule each keep their own choices; the indicator only offers the playback progress.
@@ -532,6 +556,9 @@ public sealed class DeckSettings
     public bool NoticeQq { get; set; } = true;
     public bool NoticeWeChat { get; set; } = true;
     public bool NoticeMail { get; set; } = true;
+    public bool NoticeLark { get; set; } = true;
+    public bool NoticeDingTalk { get; set; } = true;
+    public bool NoticeWeCom { get; set; } = true;
     // Also reads the Claude Code and Codex CLI session records inside WSL distributions. Off by default: it starts stopped distributions.
     public bool IncludeWsl { get; set; }
     // The ordered application list; the order is the column order of the expanded panel. Claude and Codex are shown
@@ -657,6 +684,22 @@ public sealed class DeckSettings
         MailOtpWidth = double.IsFinite(MailOtpWidth) ? Math.Clamp(MailOtpWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 520;
         MailOtpHeight = double.IsFinite(MailOtpHeight) ? Math.Clamp(MailOtpHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
         MailOtpMsClientId = (MailOtpMsClientId ?? "").Trim();
+        MessagesWidth = double.IsFinite(MessagesWidth) ? Math.Clamp(MessagesWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 520;
+        MessagesHeight = double.IsFinite(MessagesHeight) ? Math.Clamp(MessagesHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        AlarmWidth = double.IsFinite(AlarmWidth) ? Math.Clamp(AlarmWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 480;
+        AlarmHeight = double.IsFinite(AlarmHeight) ? Math.Clamp(AlarmHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        PomodoroWidth = double.IsFinite(PomodoroWidth) ? Math.Clamp(PomodoroWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 440;
+        PomodoroHeight = double.IsFinite(PomodoroHeight) ? Math.Clamp(PomodoroHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 220;
+        PomodoroFocusMinutes = Math.Clamp(PomodoroFocusMinutes, 1, 180);
+        PomodoroBreakMinutes = Math.Clamp(PomodoroBreakMinutes, 1, 60);
+        PomodoroLongBreakMinutes = Math.Clamp(PomodoroLongBreakMinutes, 1, 60);
+        PomodoroLongEvery = Math.Clamp(PomodoroLongEvery, 0, 12);
+        MemoWidth = double.IsFinite(MemoWidth) ? Math.Clamp(MemoWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 480;
+        MemoHeight = double.IsFinite(MemoHeight) ? Math.Clamp(MemoHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        ShortcutsWidth = double.IsFinite(ShortcutsWidth) ? Math.Clamp(ShortcutsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 480;
+        ShortcutsHeight = double.IsFinite(ShortcutsHeight) ? Math.Clamp(ShortcutsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        ToolsWidth = double.IsFinite(ToolsWidth) ? Math.Clamp(ToolsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 480;
+        ToolsHeight = double.IsFinite(ToolsHeight) ? Math.Clamp(ToolsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         MonitorHeight = double.IsFinite(MonitorHeight) ? Math.Clamp(MonitorHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : MonitorSizes.Default.Height;
         PanelScale = PanelScales.Fit(PanelScale);

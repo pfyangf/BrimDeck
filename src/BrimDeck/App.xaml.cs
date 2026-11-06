@@ -24,6 +24,12 @@ public partial class App : Application
     public OtpStore Otp { get; private set; } = null!;
     public EmailOtpFeed MailCodes { get; } = new();
     public MailAccountStore MailAccounts { get; private set; } = null!;
+    public MessageInbox Messages { get; } = new();
+    public AlarmStore Alarms { get; private set; } = null!;
+    public MemoStore Memos { get; private set; } = null!;
+    public ShortcutStore Shortcuts { get; private set; } = null!;
+    internal AlarmService? AlarmClock { get; private set; }
+    internal PomodoroService? Pomodoro { get; private set; }
     internal GraphMailClient? GraphMail { get; private set; }
     internal MailInboxService? MailInbox { get; private set; }
     public Pricing Prices { get; private set; } = null!;
@@ -110,6 +116,11 @@ public partial class App : Application
         Updates = new AppUpdates(BrimDeck.Updates.GitHubUpdates.Create(folder), folder);
         Secrets = new ProviderSecrets(folder);
         Otp = new OtpStore(folder, new DpapiProtector());
+        Alarms = new AlarmStore(folder);
+        Memos = new MemoStore(folder);
+        Shortcuts = new ShortcutStore(folder);
+        AlarmClock = new AlarmService(Dispatcher, Alarms, () => Settings);
+        Pomodoro = new PomodoroService(Dispatcher, () => Settings);
         var mailProtector = new DpapiProtector();
         MailAccounts = new MailAccountStore(folder, mailProtector);
         GraphMail = new GraphMailClient(folder, mailProtector, () => Settings.MailOtpMsClientId, () => _settingsWindow);
@@ -233,6 +244,7 @@ public partial class App : Application
         AssignDisplays();
         Toasts?.Apply(settings);
         MailInbox?.Apply(settings);
+        AlarmClock?.Apply();
         foreach (var deck in Decks.ToList()) { if (styleChanged) deck.MorphShape(); else deck.ApplySettings(); }
         QueueSave();
         CollapsedChanged();
@@ -319,7 +331,7 @@ public partial class App : Application
     private void StartMessageNotices()
     {
         if (Toasts is not null) return;
-        Toasts = new ToastMirror(Dispatcher);
+        Toasts = new ToastMirror(Dispatcher, Messages);
         Toasts.Arrived += notice =>
         {
             foreach (var deck in Decks.ToList()) deck.ShowMessage(notice);
@@ -331,6 +343,7 @@ public partial class App : Application
         };
         Toasts.Apply(Settings);
         MailInbox?.Apply(Settings);
+        AlarmClock?.Apply();
     }
     internal void StartMedia()
     {

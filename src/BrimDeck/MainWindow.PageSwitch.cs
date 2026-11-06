@@ -35,7 +35,7 @@ public partial class MainWindow
     // which RefreshStatus runs before ApplyHeader, would otherwise leave it at the size tier left behind until the next refresh.
     private void FitPageButtons(PanelHeader header)
     {
-        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, OtpPageButton, MailPageButton }) button.Height = header.ButtonHeight;
+        foreach (var button in PageSwitchButtons()) button.Height = header.ButtonHeight;
         PageCapsule.Height = header.ButtonHeight;
     }
     // The buttons stand in the order chosen in the settings; the first has no gap before it.
@@ -50,5 +50,25 @@ public partial class MainWindow
         }
         for (int i = 0; i < order.Count; i++) order[i].Margin = new Thickness(i == 0 ? 0 : 1, 0, 0, 0);
     }
-    private Button PageButton(DeckPage page) => page switch { DeckPage.Music => MusicPageButton, DeckPage.Monitor => MonitorPageButton, DeckPage.Otp => OtpPageButton, DeckPage.Mail => MailPageButton, _ => AIUsageButton };
+    private Button[] PageSwitchButtons() =>
+    [
+        AIUsageButton, MusicPageButton, MonitorPageButton, OtpPageButton, MailPageButton,
+        MessagesPageButton, AlarmPageButton, PomodoroPageButton, MemoPageButton, ShortcutsPageButton, ToolsPageButton
+    ];
+
+    private (Button Button, DeckPage Page)[] PageSwitchPairs() =>
+    [
+        (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor),
+        (OtpPageButton, DeckPage.Otp), (MailPageButton, DeckPage.Mail), (MessagesPageButton, DeckPage.Messages),
+        (AlarmPageButton, DeckPage.Alarm), (PomodoroPageButton, DeckPage.Pomodoro), (MemoPageButton, DeckPage.Memo),
+        (ShortcutsPageButton, DeckPage.Shortcuts), (ToolsPageButton, DeckPage.Tools)
+    ];
+
+    private Button PageButton(DeckPage page) => page switch
+    {
+        DeckPage.Music => MusicPageButton, DeckPage.Monitor => MonitorPageButton, DeckPage.Otp => OtpPageButton, DeckPage.Mail => MailPageButton,
+        DeckPage.Messages => MessagesPageButton, DeckPage.Alarm => AlarmPageButton, DeckPage.Pomodoro => PomodoroPageButton,
+        DeckPage.Memo => MemoPageButton, DeckPage.Shortcuts => ShortcutsPageButton, DeckPage.Tools => ToolsPageButton,
+        _ => AIUsageButton
+    };
 }

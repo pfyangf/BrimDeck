@@ -170,6 +170,11 @@ public partial class MainWindow : Window
             if (_lead is { } lead) { Snapshots = lead.Snapshots; _updatedAt = lead._updatedAt; DetectThresholds(); UpdateNotice(); }
             WatchOtp();
             WatchMail();
+            WatchMessages();
+            WatchAlarm();
+            WatchPomodoro();
+            WatchMemo();
+            WatchShortcuts();
             ApplySettings();
             Boot();
             _trackPointer = true; UpdatePointerTracking();
@@ -538,6 +543,12 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(MusicPageButton, Loc.T("音乐", "Music"));
         System.Windows.Automation.AutomationProperties.SetName(OtpPageButton, Loc.T("验证码", "Authenticator"));
         System.Windows.Automation.AutomationProperties.SetName(MailPageButton, Loc.T("邮箱验证码", "Email codes"));
+        System.Windows.Automation.AutomationProperties.SetName(MessagesPageButton, Loc.T("消息", "Messages"));
+        System.Windows.Automation.AutomationProperties.SetName(AlarmPageButton, Loc.T("闹钟", "Alarms"));
+        System.Windows.Automation.AutomationProperties.SetName(PomodoroPageButton, Loc.T("番茄钟", "Pomodoro"));
+        System.Windows.Automation.AutomationProperties.SetName(MemoPageButton, Loc.T("备忘录", "Memos"));
+        System.Windows.Automation.AutomationProperties.SetName(ShortcutsPageButton, Loc.T("快捷方式", "Shortcuts"));
+        System.Windows.Automation.AutomationProperties.SetName(ToolsPageButton, Loc.T("小工具", "Tools"));
         System.Windows.Automation.AutomationProperties.SetName(SettingsButton, Loc.T("设置", "Settings"));
     }
     public void Preview(bool enabled, bool expanded = true)

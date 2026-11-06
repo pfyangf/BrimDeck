@@ -21,6 +21,13 @@ public partial class MainWindow
     private readonly Button MusicPageButton = new() { Content = "Music", Width = 60, Height = 24 };
     private readonly Button MonitorPageButton = new() { Content = "Monitor", Width = 60, Height = 24 };
     private readonly Button OtpPageButton = new() { Content = "OTP", Width = 60, Height = 24 };
+    private readonly Button MailPageButton = new() { Content = "Mail", Width = 60, Height = 24 };
+    private readonly Button MessagesPageButton = new() { Content = "Messages", Width = 60, Height = 24 };
+    private readonly Button AlarmPageButton = new() { Content = "Alarm", Width = 60, Height = 24 };
+    private readonly Button PomodoroPageButton = new() { Content = "Pomodoro", Width = 60, Height = 24 };
+    private readonly Button MemoPageButton = new() { Content = "Memo", Width = 60, Height = 24 };
+    private readonly Button ShortcutsPageButton = new() { Content = "Shortcuts", Width = 60, Height = 24 };
+    private readonly Button ToolsPageButton = new() { Content = "Tools", Width = 60, Height = 24 };
     private readonly Grid PageSwitch = new();
     private readonly Border PageCapsule = new() { Width = 60, Height = 24 };
     private readonly TranslateTransform PageCapsuleShift = new();

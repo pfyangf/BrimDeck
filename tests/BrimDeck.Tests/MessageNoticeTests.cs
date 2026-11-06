@@ -23,6 +23,10 @@ internal static class MessageNoticeTests
         check("the Mail display name is mail", MessageNotices.Classify("Mail", "邮件") == MessageApp.Mail);
         check("Chrome is not mail, even with a Gmail title", MessageNotices.Classify("chrome.exe", "Google Chrome") is null);
         check("an empty toast is not a message", MessageNotices.Classify("", "  ") is null);
+        check("Lark display name is Lark", MessageNotices.Classify("", "飞书") == MessageApp.Lark);
+        check("Feishu.exe is Lark", MessageNotices.Classify("Feishu.exe", "Feishu") == MessageApp.Lark);
+        check("DingTalk.exe is DingTalk", MessageNotices.Classify("DingTalk.exe", "钉钉") == MessageApp.DingTalk);
+        check("WXWork.exe is WeCom", MessageNotices.Classify("WXWork.exe", "企业微信") == MessageApp.WeCom);
 
         string preview = MessageNotices.Preview("  Alice\n", "hello\r\nthere  ");
         check("a banner preview is one line", preview == "Alice · hello there");
@@ -38,8 +42,8 @@ internal static class MessageNoticeTests
         }
         finally { Loc.Use(previous); }
 
-        var settings = new DeckSettings { MessageNotices = true, NoticeQq = true, NoticeWeChat = false, NoticeMail = true };
-        check("each app can be left out", MessageNotices.Allows(settings, MessageApp.Qq) && !MessageNotices.Allows(settings, MessageApp.WeChat) && MessageNotices.Allows(settings, MessageApp.Mail));
+        var settings = new DeckSettings { MessageNotices = true, NoticeQq = true, NoticeWeChat = false, NoticeMail = true, NoticeLark = false, NoticeDingTalk = true, NoticeWeCom = false };
+        check("each app can be left out", MessageNotices.Allows(settings, MessageApp.Qq) && !MessageNotices.Allows(settings, MessageApp.WeChat) && MessageNotices.Allows(settings, MessageApp.Mail) && !MessageNotices.Allows(settings, MessageApp.Lark) && MessageNotices.Allows(settings, MessageApp.DingTalk));
         settings.MessageNotices = false;
         check("the master switch stops every app", !MessageNotices.AnyEnabled(settings) && !MessageNotices.Allows(settings, MessageApp.Mail));
 

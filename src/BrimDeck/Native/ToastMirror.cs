@@ -24,14 +24,16 @@ internal sealed class ToastMirror : IDisposable
 
     private readonly DispatcherTimer _timer;
     private readonly MessageNoticeFeed _feed = new();
+    private readonly MessageInbox? _inbox;
     private readonly HashSet<string> _mailSeen = new(StringComparer.Ordinal);
     private readonly Queue<string> _mailOrder = new();
     private Flags _flags;
     private bool _disposed, _polling, _asked, _forceRequest, _mailPrimed;
     private Action? _pending;
 
-    public ToastMirror(Dispatcher dispatcher)
+    public ToastMirror(Dispatcher dispatcher, MessageInbox? inbox = null)
     {
+        _inbox = inbox;
         _timer = new DispatcherTimer(PollEvery, DispatcherPriority.Background, (_, _) => _ = PollAsync(null), dispatcher);
         _timer.Stop();
         Status = Idle(default);
@@ -95,6 +97,7 @@ internal sealed class ToastMirror : IDisposable
             toasts.Sort((a, b) => a.Created.CompareTo(b.Created));
             var fresh = _feed.Observe(toasts, flags.Allows);
             if (fresh.Count > 0) Arrived?.Invoke(fresh[^1]);
+            FeedInbox(toasts, flags);
             ObserveMailOtp(toasts, flags);
         }
         finally
@@ -210,8 +213,8 @@ internal sealed class ToastMirror : IDisposable
     private static string Describe(Access access, Flags flags) => access switch
     {
         Access.Allowed => flags.Banners
-            ? Loc.T("已允许读取 Windows 通知。新的 QQ、微信和邮件横幅会显示在刘海或胶囊上。",
-                "Windows notification access is allowed. New QQ, WeChat and mail banners show on the notch or capsule.")
+            ? Loc.T("已允许读取 Windows 通知。新的消息横幅会显示在刘海或胶囊上。",
+                "Windows notification access is allowed. New message banners show on the notch or capsule.")
             : Loc.T("已允许读取 Windows 通知。新的验证码邮件会进入邮箱验证码页。",
                 "Windows notification access is allowed. New verification mails appear on the email codes page."),
         Access.Denied => Loc.T("系统拒绝了通知访问。请打开“Windows 设置 › 隐私和安全性 › 通知”，在“通知访问”中允许 BrimDeck，然后点“检查通知访问”。",
@@ -223,18 +226,34 @@ internal sealed class ToastMirror : IDisposable
         _ => Loc.T("尚未检查 Windows 通知访问。", "Windows notification access has not been checked.")
     };
 
-    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail, bool MailOtp)
+    private void FeedInbox(IReadOnlyList<ToastSnapshot> toasts, Flags flags)
     {
-        public bool Banners => Master && (Qq || WeChat || Mail);
+        if (_inbox is null || !flags.Banners) return;
+        var batch = new List<InboxMessage>();
+        foreach (var item in toasts)
+        {
+            if (MessageNotices.Classify(item.AppId, item.DisplayName) is not { } app || !flags.Allows(app)) continue;
+            batch.Add(new InboxMessage(app, item.Title, item.Body, item.Created, item.Key));
+        }
+        if (batch.Count > 0) _inbox.Remember(batch);
+    }
+
+    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail, bool Lark, bool DingTalk, bool WeCom, bool MailOtp)
+    {
+        public bool Banners => Master && (Qq || WeChat || Mail || Lark || DingTalk || WeCom);
         public bool Any => Banners || MailOtp;
         public bool Allows(MessageApp app) => Master && app switch
         {
             MessageApp.Qq => Qq,
             MessageApp.WeChat => WeChat,
             MessageApp.Mail => Mail,
+            MessageApp.Lark => Lark,
+            MessageApp.DingTalk => DingTalk,
+            MessageApp.WeCom => WeCom,
             _ => false
         };
         public static Flags From(DeckSettings settings) => new(settings.MessageNotices, settings.NoticeQq, settings.NoticeWeChat, settings.NoticeMail,
+            settings.NoticeLark, settings.NoticeDingTalk, settings.NoticeWeCom,
             settings.MailOtpPage && settings.MailOtpOutlook);
     }
 }

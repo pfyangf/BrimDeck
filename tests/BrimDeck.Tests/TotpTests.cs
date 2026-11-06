@@ -65,7 +65,7 @@ internal static class TotpTests
         check("pixels that are not a QR code decode to nothing", QrText.Read(new byte[16], 2, 2) is null);
         check("the authenticator page keeps its number and stays before mail", DeckPages.Order[^2] == DeckPage.Otp && (int)DeckPage.Otp == 3 && new DeckSettings().OtpPage);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2]}""")!;
-        check("an older page order gains the authenticator and mail pages", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail]));
+        check("an older page order gains the authenticator, mail and utility pages", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail, DeckPage.Messages, DeckPage.Alarm, DeckPage.Pomodoro, DeckPage.Memo, DeckPage.Shortcuts, DeckPage.Tools]));
         check("the carousel stays on one account and stops at the ends", OtpCarousel.Step(0, 3, -1) == 0 && OtpCarousel.Step(1, 3, 1) == 2 && OtpCarousel.Step(2, 3, 1) == 2 && OtpCarousel.Step(5, 0, 1) == 0);
     }
 

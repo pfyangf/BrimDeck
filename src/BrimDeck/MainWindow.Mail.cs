@@ -66,11 +66,7 @@ public partial class MainWindow
         if (MailContent is null) return;
         bool shown = MailContent.IsVisible && _expanded && !_preview;
         RefreshStatus();
-        UsageContent.Visibility = Visibility.Collapsed;
-        MonitorContent.Visibility = Visibility.Collapsed;
-        MusicContent.Visibility = Visibility.Collapsed;
-        OtpContent.Visibility = Visibility.Collapsed;
-        MailContent.Visibility = Visibility.Visible;
+        ShowOnlyPage(MailContent);
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
         ClockLabel.Visibility = Visibility.Visible;

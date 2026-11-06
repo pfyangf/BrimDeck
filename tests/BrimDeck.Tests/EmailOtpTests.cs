@@ -59,8 +59,8 @@ internal static class EmailOtpTests
         check("bound accounts round-trip", roundtrip.Count == 1 && roundtrip[0].Email == "a@example.com" && roundtrip[0].ImapHost == "imap.example.com");
         check("imap presets include gmail", ImapPresets.Find("gmail")?.Host == "imap.gmail.com");
 
-                check("the mail page follows authenticator in the default switch", DeckPages.Order[^1] == DeckPage.Mail && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
+                check("the mail page stays after authenticator", DeckPages.Order.ToList().IndexOf(DeckPage.Mail) == DeckPages.Order.ToList().IndexOf(DeckPage.Otp) + 1 && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2,3]}""")!;
-        check("an older page order gains the mail page", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail]));
+        check("an older page order gains the mail and utility pages", legacy.PageOrder.SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail, DeckPage.Messages, DeckPage.Alarm, DeckPage.Pomodoro, DeckPage.Memo, DeckPage.Shortcuts, DeckPage.Tools]));
     }
 }

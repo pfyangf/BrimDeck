@@ -158,11 +158,17 @@ public partial class MainWindow
         if (UsageContent is null) return;
         if (IsOtpPage) { RenderOtp(); return; }
         if (IsMailPage) { RenderMail(); return; }
+        if (IsMessagesPage) { RenderMessages(); return; }
+        if (IsAlarmPage) { RenderAlarm(); return; }
+        if (IsPomodoroPage) { RenderPomodoro(); return; }
+        if (IsMemoPage) { RenderMemo(); return; }
+        if (IsShortcutsPage) { RenderShortcuts(); return; }
+        if (IsToolsPage) { RenderTools(); return; }
         if (IsMusicPage) { RenderMusic(); return; }
         if (IsMonitorPage) { RenderMonitor(); return; }
         // Only a page that was on screen hands over; one that arrives by the page switch or with the panel opening comes in whole.
         bool shown = UsageContent.IsVisible && _expanded && !_preview;
-        MusicContent.Visibility = Visibility.Collapsed; MonitorContent.Visibility = Visibility.Collapsed; OtpContent.Visibility = Visibility.Collapsed; MailContent.Visibility = Visibility.Collapsed; UsageContent.Visibility = Visibility.Visible;
+        ShowOnlyPage(UsageContent);
         if (!Settings.UsagePage) _details = false;
         RefreshStatus();
         if (_detailPopup is not null) { _flippedColumn = null; return; }

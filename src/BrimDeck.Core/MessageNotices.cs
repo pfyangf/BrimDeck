@@ -3,7 +3,7 @@ using System.Globalization;
 namespace BrimDeck.Core;
 
 // Which messaging app a Windows toast belongs to. QQ Music and other Tencent apps are not QQ.
-public enum MessageApp { Qq, WeChat, Mail }
+public enum MessageApp { Qq, WeChat, Mail, Lark, DingTalk, WeCom }
 
 // One toast as Windows notification center lists it. Key is the listener's identity for this text, so a later
 // read of the same toast is not shown again. The feed never keeps the text after it has decided.
@@ -19,13 +19,17 @@ public static class MessageNotices
     public static readonly TimeSpan VisibleFor = TimeSpan.FromSeconds(6);
 
     public static bool AnyEnabled(DeckSettings settings)
-        => settings.MessageNotices && (settings.NoticeQq || settings.NoticeWeChat || settings.NoticeMail);
+        => settings.MessageNotices && (settings.NoticeQq || settings.NoticeWeChat || settings.NoticeMail
+            || settings.NoticeLark || settings.NoticeDingTalk || settings.NoticeWeCom);
 
     public static bool Allows(DeckSettings settings, MessageApp app) => settings.MessageNotices && app switch
     {
         MessageApp.Qq => settings.NoticeQq,
         MessageApp.WeChat => settings.NoticeWeChat,
         MessageApp.Mail => settings.NoticeMail,
+        MessageApp.Lark => settings.NoticeLark,
+        MessageApp.DingTalk => settings.NoticeDingTalk,
+        MessageApp.WeCom => settings.NoticeWeCom,
         _ => false
     };
 
@@ -34,6 +38,9 @@ public static class MessageNotices
         MessageApp.Qq => "QQ",
         MessageApp.WeChat => Loc.T("微信", "WeChat"),
         MessageApp.Mail => Loc.T("邮件", "Mail"),
+        MessageApp.Lark => Loc.T("飞书", "Lark"),
+        MessageApp.DingTalk => Loc.T("钉钉", "DingTalk"),
+        MessageApp.WeCom => Loc.T("企业微信", "WeCom"),
         _ => ""
     };
 
@@ -60,7 +67,10 @@ public static class MessageNotices
         if (Excluded(id, name)) return null;
         string tail = Tail(appId);
         if (IsWeChat(id, tail, name)) return MessageApp.WeChat;
+        if (IsWeCom(id, tail, name)) return MessageApp.WeCom;
         if (IsQq(id, tail, name)) return MessageApp.Qq;
+        if (IsLark(id, tail, name)) return MessageApp.Lark;
+        if (IsDingTalk(id, tail, name)) return MessageApp.DingTalk;
         if (IsMail(id, tail, name)) return MessageApp.Mail;
         return null;
     }
@@ -96,6 +106,9 @@ public static class MessageNotices
 
     private static readonly HashSet<string> QqNames = new(StringComparer.OrdinalIgnoreCase) { "QQ", "腾讯QQ", "腾讯 QQ", "QQ NT" };
     private static readonly HashSet<string> WeChatNames = new(StringComparer.OrdinalIgnoreCase) { "微信", "WeChat", "Weixin" };
+    private static readonly HashSet<string> WeComNames = new(StringComparer.OrdinalIgnoreCase) { "企业微信", "WeCom", "WeChat Work", "WXWork" };
+    private static readonly HashSet<string> LarkNames = new(StringComparer.OrdinalIgnoreCase) { "飞书", "Lark", "Larksuite", "Feishu" };
+    private static readonly HashSet<string> DingTalkNames = new(StringComparer.OrdinalIgnoreCase) { "钉钉", "DingTalk", "Ding Talk", "阿里钉钉" };
     private static readonly HashSet<string> MailNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "Outlook", "Microsoft Outlook", "New Outlook", "Outlook (new)", "Outlook for Windows",
@@ -112,11 +125,34 @@ public static class MessageNotices
         return id is "wechat" or "weixin" || id.Contains("tencent.wechat", StringComparison.Ordinal) || id.Contains("tencent.weixin", StringComparison.Ordinal);
     }
 
+    private static bool IsWeCom(string id, string tail, string name)
+    {
+        if (WeComNames.Contains(name)) return true;
+        if (tail is "wxwork.exe" or "wecom.exe") return true;
+        return id.Contains("wxwork", StringComparison.Ordinal) || id.Contains("wecom", StringComparison.Ordinal)
+            || id.Contains("tencent.wework", StringComparison.Ordinal);
+    }
+
     private static bool IsQq(string id, string tail, string name)
     {
         if (tail is "qq.exe" or "qqnt.exe" or "qqex.exe") return true;
         if (id is "qq" or "tencent.qq" || id.StartsWith("tencent.qq.", StringComparison.Ordinal)) return true;
         return QqNames.Contains(name);
+    }
+
+    private static bool IsLark(string id, string tail, string name)
+    {
+        if (LarkNames.Contains(name)) return true;
+        if (tail is "lark.exe" or "feishu.exe" or "larksuite.exe") return true;
+        return id.Contains("lark", StringComparison.Ordinal) || id.Contains("feishu", StringComparison.Ordinal)
+            || id.Contains("bytedance.feishu", StringComparison.Ordinal) || id.Contains("bytedance.lark", StringComparison.Ordinal);
+    }
+
+    private static bool IsDingTalk(string id, string tail, string name)
+    {
+        if (DingTalkNames.Contains(name)) return true;
+        if (tail is "dingtalk.exe" or "dingtalklauncher.exe") return true;
+        return id.Contains("dingtalk", StringComparison.Ordinal) || id.Contains("alibaba.dingtalk", StringComparison.Ordinal);
     }
 
     private static bool IsMail(string id, string tail, string name)

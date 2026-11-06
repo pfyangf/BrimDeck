@@ -5,13 +5,29 @@ namespace BrimDeck.Core;
 public static class DeckPages
 {
     // The page switch, left to right, until the order is changed in the settings (DeckSettings.PageOrder).
-    public static readonly IReadOnlyList<DeckPage> Order = [DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail];
+    public static readonly IReadOnlyList<DeckPage> Order =
+    [
+        DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Otp, DeckPage.Mail,
+        DeckPage.Messages, DeckPage.Alarm, DeckPage.Pomodoro,
+        DeckPage.Memo, DeckPage.Shortcuts, DeckPage.Tools
+    ];
     // Each known page once, in the saved order; a page missing from the file takes its default place after the others.
     public static List<DeckPage> Normalize(IEnumerable<DeckPage>? order) => [.. (order ?? []).Where(page => Enum.IsDefined(page)).Concat(Order).Distinct()];
 
     public static bool Shown(DeckSettings settings, DeckPage page) => page switch
     {
-        DeckPage.Usage => settings.UsagePage, DeckPage.Music => settings.MusicPage, DeckPage.Monitor => settings.MonitorPage, DeckPage.Otp => settings.OtpPage, DeckPage.Mail => settings.MailOtpPage, _ => false
+        DeckPage.Usage => settings.UsagePage,
+        DeckPage.Music => settings.MusicPage,
+        DeckPage.Monitor => settings.MonitorPage,
+        DeckPage.Otp => settings.OtpPage,
+        DeckPage.Mail => settings.MailOtpPage,
+        DeckPage.Messages => settings.MessagesPage,
+        DeckPage.Alarm => settings.AlarmPage,
+        DeckPage.Pomodoro => settings.PomodoroPage,
+        DeckPage.Memo => settings.MemoPage,
+        DeckPage.Shortcuts => settings.ShortcutsPage,
+        DeckPage.Tools => settings.ToolsPage,
+        _ => false
     };
 
     public static IReadOnlyList<DeckPage> Visible(DeckSettings settings) => settings.PageOrder.Where(page => Shown(settings, page)).ToList();
@@ -24,7 +40,18 @@ public static class DeckPages
     // The page the panel opens on; null keeps the last viewed page.
     public static DeckPage? Opening(DefaultDeckPage choice) => choice switch
     {
-        DefaultDeckPage.Usage => DeckPage.Usage, DefaultDeckPage.Music => DeckPage.Music, DefaultDeckPage.Monitor => DeckPage.Monitor, DefaultDeckPage.Otp => DeckPage.Otp, DefaultDeckPage.Mail => DeckPage.Mail, _ => null
+        DefaultDeckPage.Usage => DeckPage.Usage,
+        DefaultDeckPage.Music => DeckPage.Music,
+        DefaultDeckPage.Monitor => DeckPage.Monitor,
+        DefaultDeckPage.Otp => DeckPage.Otp,
+        DefaultDeckPage.Mail => DeckPage.Mail,
+        DefaultDeckPage.Messages => DeckPage.Messages,
+        DefaultDeckPage.Alarm => DeckPage.Alarm,
+        DefaultDeckPage.Pomodoro => DeckPage.Pomodoro,
+        DefaultDeckPage.Memo => DeckPage.Memo,
+        DefaultDeckPage.Shortcuts => DeckPage.Shortcuts,
+        DefaultDeckPage.Tools => DeckPage.Tools,
+        _ => null
     };
 
     // Every page's size lies within these; the usage page is also at least as wide as its columns need (MinimumWidth).
@@ -47,6 +74,12 @@ public static class DeckPages
             case DeckPage.Monitor: settings.MonitorWidth = width; settings.MonitorHeight = height; break;
             case DeckPage.Otp: settings.OtpWidth = width; settings.OtpHeight = height; break;
             case DeckPage.Mail: settings.MailOtpWidth = width; settings.MailOtpHeight = height; break;
+            case DeckPage.Messages: settings.MessagesWidth = width; settings.MessagesHeight = height; break;
+            case DeckPage.Alarm: settings.AlarmWidth = width; settings.AlarmHeight = height; break;
+            case DeckPage.Pomodoro: settings.PomodoroWidth = width; settings.PomodoroHeight = height; break;
+            case DeckPage.Memo: settings.MemoWidth = width; settings.MemoHeight = height; break;
+            case DeckPage.Shortcuts: settings.ShortcutsWidth = width; settings.ShortcutsHeight = height; break;
+            case DeckPage.Tools: settings.ToolsWidth = width; settings.ToolsHeight = height; break;
             default: settings.Width = width; settings.Height = height; break;
         }
     }
@@ -57,6 +90,12 @@ public static class DeckPages
         DeckPage.Monitor => (settings.MonitorWidth, settings.MonitorHeight),
         DeckPage.Otp => (settings.OtpWidth, settings.OtpHeight),
         DeckPage.Mail => (settings.MailOtpWidth, settings.MailOtpHeight),
+        DeckPage.Messages => (settings.MessagesWidth, settings.MessagesHeight),
+        DeckPage.Alarm => (settings.AlarmWidth, settings.AlarmHeight),
+        DeckPage.Pomodoro => (settings.PomodoroWidth, settings.PomodoroHeight),
+        DeckPage.Memo => (settings.MemoWidth, settings.MemoHeight),
+        DeckPage.Shortcuts => (settings.ShortcutsWidth, settings.ShortcutsHeight),
+        DeckPage.Tools => (settings.ToolsWidth, settings.ToolsHeight),
         _ => (Math.Max(settings.Width, settings.MinimumWidth), settings.Height)
     };
 
