@@ -18,6 +18,12 @@ public sealed class BoundMailAccount
     public string? ImapHost { get; set; }
     public int ImapPort { get; set; } = 993;
     public bool ImapSsl { get; set; } = true;
+    // When SSL is off: prefer STARTTLS if the server offers it (Foxmail-style). Ignored when ImapSsl is true.
+    public bool StartTls { get; set; }
+    // Optional SMTP fields for Foxmail-like bind UI. Not used for OTP fetch.
+    public string? SmtpHost { get; set; }
+    public int SmtpPort { get; set; } = 465;
+    public bool SmtpSsl { get; set; } = true;
     public string? Username { get; set; }
     // MSAL home account id when Kind is MicrosoftGraph; used to pick the right cached account.
     public string? GraphHomeAccountId { get; set; }
@@ -47,10 +53,12 @@ public sealed class BoundMailAccount
         Email = (Email ?? "").Trim();
         DisplayName = (DisplayName ?? "").Trim();
         ImapHost = string.IsNullOrWhiteSpace(ImapHost) ? null : ImapHost.Trim();
+        SmtpHost = string.IsNullOrWhiteSpace(SmtpHost) ? null : SmtpHost.Trim();
         Username = string.IsNullOrWhiteSpace(Username) ? null : Username.Trim();
         GraphHomeAccountId = string.IsNullOrWhiteSpace(GraphHomeAccountId) ? null : GraphHomeAccountId.Trim();
         int fallback = Kind == MailAccountKind.Pop3 ? 995 : 993;
         if (ImapPort is < 1 or > 65535) ImapPort = fallback;
+        if (SmtpPort is < 1 or > 65535) SmtpPort = 465;
         return this;
     }
 }
@@ -58,7 +66,7 @@ public sealed class BoundMailAccount
 // Well-known IMAP presets offered in Settings › Email codes. Custom lets the user type host/port.
 public static class ImapPresets
 {
-    public sealed record Preset(string Id, string Title, string Host, int Port, bool Ssl, string HintZh, string HintEn);
+    public sealed record Preset(string Id, string Title, string Host, int Port, bool Ssl, string HintZh, string HintEn, string? SmtpHost = null, int SmtpPort = 465, bool SmtpSsl = true);
 
     public static IReadOnlyList<Preset> All { get; } =
     [
@@ -89,9 +97,14 @@ public static class ImapPresets
         new("yahoo", "Yahoo Mail", "imap.mail.yahoo.com", 993, true,
             "在 Yahoo 账号安全设置里生成应用专用密码。",
             "Generate an app password in Yahoo account security settings."),
+        new("aliyun-mx", "阿里云企业邮 / 万网", "imap.mxhichina.com", 993, true,
+            "阿里云企业邮 / 万网（HiChina）常用 imap.mxhichina.com；发件 smtp.mxhichina.com:465 SSL。",
+            "Aliyun enterprise / Wanwang (HiChina) often uses imap.mxhichina.com; SMTP smtp.mxhichina.com:465 SSL.",
+            "smtp.mxhichina.com", 465, true),
         new("aliyun", "阿里云邮箱", "imap.qiye.aliyun.com", 993, true,
-            "企业邮箱请用阿里云提供的 IMAP 主机；个人阿里云邮箱多为 imap.aliyun.com。",
-            "Use the IMAP host from Aliyun; personal Aliyun mail is often imap.aliyun.com."),
+            "企业邮箱请用阿里云提供的 IMAP 主机；个人阿里云邮箱多为 imap.aliyun.com。也可选「阿里云企业邮 / 万网」预设（imap.mxhichina.com）。",
+            "Use the IMAP host from Aliyun; personal Aliyun mail is often imap.aliyun.com. Or pick the Aliyun enterprise / Wanwang preset (imap.mxhichina.com).",
+            "smtp.qiye.aliyun.com", 465, true),
         new("139", "139 邮箱", "imap.139.com", 993, true,
             "在 139 邮箱设置里开启 IMAP，并使用授权码。",
             "Enable IMAP in 139 Mail settings and use the authorization code."),
@@ -112,7 +125,7 @@ public static class ImapPresets
 // Well-known POP3 presets offered in Settings › Email codes. Custom lets the user type host/port.
 public static class Pop3Presets
 {
-    public sealed record Preset(string Id, string Title, string Host, int Port, bool Ssl, string HintZh, string HintEn);
+    public sealed record Preset(string Id, string Title, string Host, int Port, bool Ssl, string HintZh, string HintEn, string? SmtpHost = null, int SmtpPort = 465, bool SmtpSsl = true);
 
     public static IReadOnlyList<Preset> All { get; } =
     [
@@ -143,9 +156,14 @@ public static class Pop3Presets
         new("yahoo", "Yahoo Mail", "pop.mail.yahoo.com", 995, true,
             "在 Yahoo 账号安全设置里生成应用专用密码。BrimDeck 不会删除服务器上的邮件。",
             "Generate an app password in Yahoo account security settings. BrimDeck does not delete mail on the server."),
+        new("aliyun-mx", "阿里云企业邮 / 万网", "pop3.mxhichina.com", 995, true,
+            "阿里云企业邮 / 万网（HiChina）常用 pop3.mxhichina.com:995 SSL；发件 smtp.mxhichina.com:465 SSL。BrimDeck 只读取邮件，不会从服务器删除（等同永久保留）。",
+            "Aliyun enterprise / Wanwang (HiChina) often uses pop3.mxhichina.com:995 SSL; SMTP smtp.mxhichina.com:465 SSL. BrimDeck only reads mail and does not delete it (keep forever).",
+            "smtp.mxhichina.com", 465, true),
         new("aliyun", "阿里云邮箱", "pop.qiye.aliyun.com", 995, true,
-            "企业邮箱请用阿里云提供的 POP3 主机；个人阿里云邮箱多为 pop.aliyun.com。BrimDeck 不会删除服务器上的邮件。",
-            "Use the POP3 host from Aliyun; personal Aliyun mail is often pop.aliyun.com. BrimDeck does not delete mail on the server."),
+            "企业邮箱请用阿里云提供的 POP3 主机；个人阿里云邮箱多为 pop.aliyun.com。也可选「阿里云企业邮 / 万网」预设（pop3.mxhichina.com）。BrimDeck 不会删除服务器上的邮件。",
+            "Use the POP3 host from Aliyun; personal Aliyun mail is often pop.aliyun.com. Or pick the Aliyun enterprise / Wanwang preset (pop3.mxhichina.com). BrimDeck does not delete mail on the server.",
+            "smtp.qiye.aliyun.com", 465, true),
         new("139", "139 邮箱", "pop.139.com", 995, true,
             "在 139 邮箱设置里开启 POP3，并使用授权码。BrimDeck 不会删除服务器上的邮件。",
             "Enable POP3 in 139 Mail settings and use the authorization code. BrimDeck does not delete mail on the server."),

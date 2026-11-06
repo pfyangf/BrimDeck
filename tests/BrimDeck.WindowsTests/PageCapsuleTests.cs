@@ -32,6 +32,11 @@ public partial class MainWindow
     private readonly Border PageCapsule = new() { Width = 60, Height = 24 };
     private readonly TranslateTransform PageCapsuleShift = new();
     private bool _expanded = true, _preview = false;
+    // Stubs for LayoutExpandedClock (linked from MainWindow.PageSwitch.cs).
+    private readonly TextBlock ClockLabel = new() { Text = "09:58", Visibility = Visibility.Collapsed };
+    private readonly Grid Toolbar = new() { Width = 260, Height = 36 };
+    private readonly Button SettingsButton = new() { Width = 28, Height = 24 };
+    private PanelHeader _header = PanelHeader.For(36, 20);
 
     // Links the actual production method, including its retry branch and button reorder, rather than testing the helper alone.
     internal static void CheckPageCapsule(Action<string, bool> check)

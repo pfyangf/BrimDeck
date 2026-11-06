@@ -168,7 +168,7 @@ public sealed partial class SettingsWindow
         var dialog = new Window
         {
             Title = Loc.T($"添加 {protocol} 邮箱", $"Add {protocol} mailbox"),
-            Owner = this, Width = 440, SizeToContent = SizeToContent.Height,
+            Owner = this, Width = 520, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
             FontFamily = UI.PanelFont, Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary),
             ResizeMode = ResizeMode.NoResize
@@ -197,21 +197,54 @@ public sealed partial class SettingsWindow
         }
         presetBox.SelectedIndex = 0;
 
-        var email = Field(); AutomationProperties.SetName(email, Loc.T("邮箱地址", "Email address"));
+        var email = Field(); AutomationProperties.SetName(email, Loc.T("帐号", "Account"));
         var user = Field(); AutomationProperties.SetName(user, Loc.T("用户名", "Username"));
         var password = new PasswordBox { Style = (Style)FindResource("SettingsPasswordField"), Margin = new Thickness(0, 4, 0, 12), MaxLength = 256 };
         AutomationProperties.SetName(password, Loc.T("密码或授权码", "Password or app password"));
-        var host = Field(); AutomationProperties.SetName(host, Loc.T($"{protocol} 服务器", $"{protocol} server"));
-        var port = Field(); port.Text = pop3 ? "995" : "993"; AutomationProperties.SetName(port, Loc.T("端口", "Port"));
-        var ssl = new CheckBox { Content = Loc.T("SSL/TLS", "SSL/TLS"), IsChecked = true, Margin = new Thickness(0, 0, 0, 12), Foreground = UI.Brush(TextPrimary) };
+
+        var host = Field(); host.Margin = new Thickness(0); AutomationProperties.SetName(host, Loc.T("收件服务器", "Incoming server"));
+        var port = Field(); port.Width = 64; port.Margin = new Thickness(0); port.Text = pop3 ? "995" : "993";
+        AutomationProperties.SetName(port, Loc.T("端口", "Port"));
+        var ssl = new CheckBox { Content = "SSL", IsChecked = true, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0), Foreground = UI.Brush(TextPrimary) };
+
+        var smtpHost = Field(); smtpHost.Margin = new Thickness(0); AutomationProperties.SetName(smtpHost, Loc.T("发件服务器", "Outgoing server"));
+        var smtpPort = Field(); smtpPort.Width = 64; smtpPort.Margin = new Thickness(0); smtpPort.Text = "465";
+        AutomationProperties.SetName(smtpPort, Loc.T("发件端口", "Outgoing port"));
+        var smtpSsl = new CheckBox { Content = "SSL", IsChecked = true, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0), Foreground = UI.Brush(TextPrimary) };
+
+        var startTls = new CheckBox
+        {
+            Content = Loc.T("如果服务器支持，就使用 STARTTLS 加密传输", "If the server supports it, use STARTTLS"),
+            IsChecked = false, Margin = new Thickness(0, 0, 0, 8), Foreground = UI.Brush(TextPrimary)
+        };
+        var keepNote = TextLine(
+            Loc.T("收取后在服务器上：永久保留（BrimDeck 不会删除服务器邮件）", "After download on server: keep forever (BrimDeck never deletes server mail)"),
+            12, TextTertiary);
+        keepNote.TextWrapping = TextWrapping.Wrap; keepNote.Margin = new Thickness(0, 0, 0, 8);
         var hint = TextLine("", 12, TextTertiary); hint.TextWrapping = TextWrapping.Wrap; hint.Margin = new Thickness(0, 0, 0, 8);
+
+        FrameworkElement ServerRow(TextBox hostBox, CheckBox sslBox, TextBox portBox)
+        {
+            var row = new Grid { Margin = new Thickness(0, 4, 0, 8) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(hostBox, 0); Grid.SetColumn(sslBox, 1);
+            var portLabel = TextLine(Loc.T("端口", "Port"), 12, TextSecondary);
+            portLabel.VerticalAlignment = VerticalAlignment.Center; portLabel.Margin = new Thickness(0, 0, 6, 0);
+            Grid.SetColumn(portLabel, 2); Grid.SetColumn(portBox, 3);
+            row.Children.Add(hostBox); row.Children.Add(sslBox); row.Children.Add(portLabel); row.Children.Add(portBox);
+            return row;
+        }
 
         void ApplyPreset()
         {
             string id = (presetBox.SelectedItem as ComboBoxItem)?.Tag as string ?? "custom";
+            var preset = pop3 ? Pop3Presets.Find(id) : null;
+            string? smtp = null; int smtpP = 465; bool smtpS = true;
             if (pop3)
             {
-                var preset = Pop3Presets.Find(id);
                 if (preset is null) return;
                 hint.Text = Loc.T(preset.HintZh, preset.HintEn);
                 if (preset.Id != "custom")
@@ -219,33 +252,51 @@ public sealed partial class SettingsWindow
                     host.Text = preset.Host;
                     port.Text = preset.Port.ToString();
                     ssl.IsChecked = preset.Ssl;
+                    smtp = preset.SmtpHost; smtpP = preset.SmtpPort; smtpS = preset.SmtpSsl;
                 }
             }
             else
             {
-                var preset = ImapPresets.Find(id);
-                if (preset is null) return;
-                hint.Text = Loc.T(preset.HintZh, preset.HintEn);
-                if (preset.Id != "custom")
+                var imap = ImapPresets.Find(id);
+                if (imap is null) return;
+                hint.Text = Loc.T(imap.HintZh, imap.HintEn);
+                if (imap.Id != "custom")
                 {
-                    host.Text = preset.Host;
-                    port.Text = preset.Port.ToString();
-                    ssl.IsChecked = preset.Ssl;
+                    host.Text = imap.Host;
+                    port.Text = imap.Port.ToString();
+                    ssl.IsChecked = imap.Ssl;
+                    smtp = imap.SmtpHost; smtpP = imap.SmtpPort; smtpS = imap.SmtpSsl;
                 }
+            }
+            if (smtp is { Length: > 0 })
+            {
+                smtpHost.Text = smtp;
+                smtpPort.Text = smtpP.ToString();
+                smtpSsl.IsChecked = smtpS;
+            }
+            else if (id == "custom")
+            {
+                // Leave whatever the user typed; only clear when switching away from a filled preset into custom with empty hosts.
             }
         }
         presetBox.SelectionChanged += (_, _) => ApplyPreset();
         ApplyPreset();
 
+        panel.Children.Add(TextLine(Loc.T("邮箱类型", "Mailbox type"), 12, TextSecondary));
+        panel.Children.Add(TextLine(protocol, 13, TextPrimary, FontWeights.SemiBold));
+        ((TextBlock)panel.Children[^1]).Margin = new Thickness(0, 2, 0, 10);
         panel.Children.Add(TextLine(Loc.T("邮箱服务", "Mail service"), 12, TextSecondary));
         panel.Children.Add(presetBox);
-        panel.Children.Add(Labeled(Loc.T("邮箱地址", "Email address"), email));
-        panel.Children.Add(Labeled(Loc.T("用户名（可空，默认邮箱）", "Username (optional, defaults to email)"), user));
+        panel.Children.Add(Labeled(Loc.T("帐号", "Account"), email));
+        panel.Children.Add(Labeled(Loc.T("用户名（可空，默认帐号）", "Username (optional, defaults to account)"), user));
         panel.Children.Add(TextLine(Loc.T("密码 / 授权码 / 应用专用密码", "Password / auth code / app password"), 12, TextSecondary));
         panel.Children.Add(password);
-        panel.Children.Add(Labeled(Loc.T($"{protocol} 服务器", $"{protocol} server"), host));
-        panel.Children.Add(Labeled(Loc.T("端口", "Port"), port));
-        panel.Children.Add(ssl);
+        panel.Children.Add(TextLine(Loc.T("收件服务器", "Incoming server"), 12, TextSecondary));
+        panel.Children.Add(ServerRow(host, ssl, port));
+        panel.Children.Add(TextLine(Loc.T("发件服务器（可选，仅保存）", "Outgoing server (optional, stored only)"), 12, TextSecondary));
+        panel.Children.Add(ServerRow(smtpHost, smtpSsl, smtpPort));
+        panel.Children.Add(startTls);
+        panel.Children.Add(keepNote);
         panel.Children.Add(hint);
 
         bool saved = false;
@@ -263,11 +314,15 @@ public sealed partial class SettingsWindow
                 Username = string.IsNullOrWhiteSpace(user.Text) ? null : user.Text.Trim(),
                 ImapHost = (host.Text ?? "").Trim(),
                 ImapPort = int.TryParse(port.Text, out int parsed) ? parsed : fallbackPort,
-                ImapSsl = ssl.IsChecked != false
+                ImapSsl = ssl.IsChecked != false,
+                StartTls = startTls.IsChecked == true,
+                SmtpHost = string.IsNullOrWhiteSpace(smtpHost.Text) ? null : smtpHost.Text.Trim(),
+                SmtpPort = int.TryParse(smtpPort.Text, out int smtpParsed) ? smtpParsed : 465,
+                SmtpSsl = smtpSsl.IsChecked != false
             }.Normalize();
             if (account.Email.Length == 0 || account.ImapHost is null || account.ImapHost.Length == 0)
             {
-                MessageBox.Show(dialog, Loc.T($"请填写邮箱地址和 {protocol} 服务器。", $"Enter the email address and {protocol} server."),
+                MessageBox.Show(dialog, Loc.T($"请填写帐号和收件服务器。", $"Enter the account and incoming server."),
                     dialog.Title, MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }

@@ -73,6 +73,11 @@ internal static class EmailOtpTests
             BoundMailAccounts.Import("""[{"id":"11111111-1111-1111-1111-111111111111","kind":1,"email":"old@example.com","imapHost":"imap.old.com","imapPort":993,"imapSsl":true}]""")[0].Kind == MailAccountKind.Imap);
         check("pop3 presets include gmail", Pop3Presets.Find("gmail")?.Host == "pop.gmail.com" && Pop3Presets.Find("gmail")?.Port == 995);
         check("pop3 presets include qq", Pop3Presets.Find("qq")?.Host == "pop.qq.com");
+        check("pop3 presets include aliyun mxhichina", Pop3Presets.Find("aliyun-mx")?.Host == "pop3.mxhichina.com" && Pop3Presets.Find("aliyun-mx")?.Port == 995 && Pop3Presets.Find("aliyun-mx")?.SmtpHost == "smtp.mxhichina.com");
+        check("imap presets include aliyun mxhichina", ImapPresets.Find("aliyun-mx")?.Host == "imap.mxhichina.com" && ImapPresets.Find("aliyun-mx")?.SmtpHost == "smtp.mxhichina.com");
+        var withSmtp = new BoundMailAccount { Kind = MailAccountKind.Pop3, Email = "y@example.com", ImapHost = "pop3.mxhichina.com", ImapPort = 995, SmtpHost = "smtp.mxhichina.com", SmtpPort = 465, SmtpSsl = true, StartTls = false }.Normalize();
+        var smtpRound = BoundMailAccounts.Import(BoundMailAccounts.Export([withSmtp]));
+        check("smtp fields round-trip", smtpRound.Count == 1 && smtpRound[0].SmtpHost == "smtp.mxhichina.com" && smtpRound[0].SmtpPort == 465 && smtpRound[0].SmtpSsl && !smtpRound[0].StartTls);
 
                 check("the mail page stays after authenticator", DeckPages.Order.ToList().IndexOf(DeckPage.Mail) == DeckPages.Order.ToList().IndexOf(DeckPage.Otp) + 1 && (int)DeckPage.Mail == 4 && !new DeckSettings().MailOtpPage);
         var legacy = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[0,1,2,3]}""")!;

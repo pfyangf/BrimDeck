@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using BrimDeck.Core;
+using Microsoft.Win32;
 
 namespace BrimDeck;
 
@@ -40,11 +42,11 @@ public partial class MainWindow
         root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0, 4, 6) };
-        head.Children.Add(DeckChip(Loc.T("添加快捷方式", "Add shortcut"), true, () => EditShortcut(new ShortcutItem())));
+        head.Children.Add(DeckChip(Loc.T("添加快捷方式", "Add shortcut"), true, AddShortcut));
         root.Children.Add(head);
         if (_shortcuts.Count == 0)
         {
-            var empty = DeckEmpty(Loc.T("添加 .exe / .lnk 或 shell URI，点击即可打开。", "Add an .exe / .lnk or shell URI, then click to launch."));
+            var empty = DeckEmpty(Loc.T("点「添加快捷方式」选择 .exe / .lnk，或手动填写 shell URI。", "Tap Add shortcut to pick an .exe / .lnk, or type a shell URI."));
             Grid.SetRow(empty, 1);
             root.Children.Add(empty);
         }
@@ -96,21 +98,63 @@ public partial class MainWindow
     {
         if (!ShortcutItems.IsSafeTarget(item.Target)) return;
         try { Process.Start(new ProcessStartInfo(item.Target) { UseShellExecute = true }); }
-        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or System.IO.FileNotFoundException) { }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or FileNotFoundException) { }
     }
 
-    private void EditShortcut(ShortcutItem item)
+    // Opens a file picker first so “Add shortcut” always shows a selection window (exe / lnk / …).
+    private void AddShortcut()
+    {
+        string? path = PickShortcutTarget();
+        if (path is null) return;
+        var item = new ShortcutItem
+        {
+            Name = Path.GetFileNameWithoutExtension(path),
+            Target = path
+        };
+        EditShortcut(item, picked: true);
+    }
+
+    private string? PickShortcutTarget()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = Loc.T("选择快捷方式", "Choose a shortcut"),
+            Filter = Loc.T(
+                "程序与快捷方式 (*.exe;*.lnk;*.bat;*.cmd;*.url)|*.exe;*.lnk;*.bat;*.cmd;*.url|所有文件 (*.*)|*.*",
+                "Programs and shortcuts (*.exe;*.lnk;*.bat;*.cmd;*.url)|*.exe;*.lnk;*.bat;*.cmd;*.url|All files (*.*)|*.*"),
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private void EditShortcut(ShortcutItem item, bool picked = false)
     {
         bool isNew = _shortcuts.All(s => s.Id != item.Id);
         var dialog = new Window
         {
             Title = Loc.T("快捷方式", "Shortcut"),
-            Width = 420, Height = 220, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 460, Height = 250, WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this, ResizeMode = ResizeMode.NoResize, Background = UI.Brush(PanelTheme.Hex("surface"))
         };
         var root = new StackPanel { Margin = new Thickness(16) };
         var name = new TextBox { Text = item.Name, Margin = new Thickness(0, 0, 0, 8) };
-        var target = new TextBox { Text = item.Target, Margin = new Thickness(0, 0, 0, 8) };
+        var target = new TextBox { Text = item.Target, Margin = new Thickness(0, 0, 8, 0) };
+        var browse = new Button { Content = Loc.T("浏览…", "Browse…"), Padding = new Thickness(12, 6, 12, 6), MinWidth = 72 };
+        browse.Click += (_, _) =>
+        {
+            string? path = PickShortcutTarget();
+            if (path is null) return;
+            target.Text = path;
+            if (string.IsNullOrWhiteSpace(name.Text) || picked || isNew)
+                name.Text = Path.GetFileNameWithoutExtension(path);
+        };
+        var targetRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        targetRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        targetRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(browse, 1);
+        targetRow.Children.Add(target);
+        targetRow.Children.Add(browse);
         var save = new Button { Content = Loc.T("保存", "Save"), Padding = new Thickness(12, 6, 12, 6) };
         save.Click += (_, _) =>
         {
@@ -125,7 +169,7 @@ public partial class MainWindow
         root.Children.Add(new TextBlock { Text = Loc.T("名称", "Name"), Margin = new Thickness(0, 0, 0, 4) });
         root.Children.Add(name);
         root.Children.Add(new TextBlock { Text = Loc.T("路径或 URI", "Path or URI"), Margin = new Thickness(0, 0, 0, 4) });
-        root.Children.Add(target);
+        root.Children.Add(targetRow);
         root.Children.Add(save);
         dialog.Content = root;
         dialog.ShowDialog();

@@ -21,7 +21,7 @@ internal static class ImapMailClient
         string user = string.IsNullOrWhiteSpace(account.Username) ? account.Email : account.Username!.Trim();
         using var client = new ImapClient { Timeout = 30_000 };
         await client.ConnectAsync(host, account.ImapPort <= 0 ? 993 : account.ImapPort,
-            account.ImapSsl ? MailKit.Security.SecureSocketOptions.SslOnConnect : MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable,
+            SocketOptions(account),
             cancel).ConfigureAwait(false);
         try
         {
@@ -60,7 +60,7 @@ internal static class ImapMailClient
         string user = string.IsNullOrWhiteSpace(account.Username) ? account.Email : account.Username!.Trim();
         using var client = new ImapClient { Timeout = 20_000 };
         await client.ConnectAsync(host, account.ImapPort <= 0 ? 993 : account.ImapPort,
-            account.ImapSsl ? MailKit.Security.SecureSocketOptions.SslOnConnect : MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable,
+            SocketOptions(account),
             cancel).ConfigureAwait(false);
         try
         {
@@ -91,4 +91,10 @@ internal static class ImapMailClient
         }
         return "";
     }
+    // SSL → SslOnConnect; otherwise StartTlsWhenAvailable (Foxmail STARTTLS-when-supported / legacy non-SSL).
+    private static MailKit.Security.SecureSocketOptions SocketOptions(BoundMailAccount account) =>
+        account.ImapSsl ? MailKit.Security.SecureSocketOptions.SslOnConnect
+        : MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable;
+
+
 }

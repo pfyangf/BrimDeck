@@ -29,6 +29,7 @@ public partial class MainWindow
         PageCapsuleShift.X = x;
         if (glide) PageCapsuleShift.BeginAnimation(TranslateTransform.XProperty, new System.Windows.Media.Animation.DoubleAnimation(from, x, TimeSpan.FromMilliseconds(Soft.Choose))
         { EasingFunction = Soft.Follow, FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop });
+        LayoutExpandedClock();
     }
     private bool _capsulePending;
     // The page buttons take the header's button height, and the capsule under the chosen one takes it in the same step: PlacePageCapsule,
@@ -71,4 +72,42 @@ public partial class MainWindow
         DeckPage.Memo => MemoPageButton, DeckPage.Shortcuts => ShortcutsPageButton, DeckPage.Tools => ToolsPageButton,
         _ => AIUsageButton
     };
+
+    // Keeps the centered clock clear of the growing page switch and the right-hand controls.
+    // When many pages are shown on a narrow panel the switch used to draw over the "HH:mm" digits.
+    private bool _clockLayoutPending;
+    private void LayoutExpandedClock()
+    {
+        if (!_expanded || ClockLabel.Visibility != Visibility.Visible) return;
+        if (!LayoutRetry.Laid(Toolbar) || (PageSwitch.Visibility == Visibility.Visible && !LayoutRetry.Laid(PageSwitch)))
+        {
+            if (_clockLayoutPending) return;
+            _clockLayoutPending = true;
+            LayoutRetry.WhenReady(this,
+                () => LayoutRetry.Laid(Toolbar) && (PageSwitch.Visibility != Visibility.Visible || LayoutRetry.Laid(PageSwitch)),
+                () => { _clockLayoutPending = false; LayoutExpandedClock(); });
+            return;
+        }
+        _clockLayoutPending = false;
+        double toolbarW = Toolbar.ActualWidth;
+        if (toolbarW <= 0) return;
+        double switchRight = _header.Side;
+        if (PageSwitch.Visibility == Visibility.Visible && PageSwitch.ActualWidth > 0)
+            switchRight = PageSwitch.TranslatePoint(new Point(PageSwitch.ActualWidth, 0), Toolbar).X;
+        double rightLeft = toolbarW - _header.RightMargin - PanelHeader.SettingsWidth;
+        if (SettingsButton.Parent is FrameworkElement right && right.IsVisible && right.ActualWidth > 0)
+            rightLeft = right.TranslatePoint(new Point(0, 0), Toolbar).X;
+        ClockLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double clockW = Math.Max(ClockLabel.DesiredSize.Width, ClockLabel.ActualWidth);
+        if (clockW <= 0) clockW = 36;
+        const double gap = 10;
+        double ideal = (toolbarW - clockW) / 2;
+        double minLeft = switchRight + gap;
+        double maxLeft = rightLeft - gap - clockW;
+        double left = maxLeft < minLeft
+            ? Math.Max(0, (switchRight + rightLeft - clockW) / 2)
+            : Math.Clamp(ideal, minLeft, maxLeft);
+        ClockLabel.HorizontalAlignment = HorizontalAlignment.Left;
+        ClockLabel.Margin = new Thickness(Math.Round(left), 0, 0, 0);
+    }
 }
