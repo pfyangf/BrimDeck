@@ -314,7 +314,7 @@ static class SystemMonitorTests
         check("Pages: the switch follows the chosen order", DeckPages.Visible(ordered).SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music, DeckPage.Otp]));
         ordered.MonitorPage = false;
         check("Pages: a hidden page falls back to the first shown one in the chosen order", DeckPages.Resolve(ordered, DeckPage.Monitor) == DeckPage.Usage);
-        var odd = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[2,9,2]}""")!;
+        var odd = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>("""{"PageOrder":[2,99,2]}""")!;
         check("Pages: unknown and repeated pages are dropped and missing ones added", odd.PageOrder.SequenceEqual([DeckPage.Monitor, DeckPage.Usage, DeckPage.Music, DeckPage.Otp, DeckPage.Mail, DeckPage.Messages, DeckPage.Alarm, DeckPage.Pomodoro, DeckPage.Memo, DeckPage.Shortcuts, DeckPage.Tools]));
         var copy = ordered.Copy(); copy.PageOrder = [.. DeckPages.Order];
         var orderRead = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>(System.Text.Json.JsonSerializer.Serialize(ordered))!;
