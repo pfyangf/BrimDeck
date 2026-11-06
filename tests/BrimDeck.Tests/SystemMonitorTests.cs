@@ -334,7 +334,7 @@ static class SystemMonitorTests
         check("Pages: the window holds the largest shown page", DeckPages.Largest(sizes) == (700, 300));
         sizes.MusicPage = false; sizes.MonitorPage = false; sizes.OtpPage = false;
         check("Pages: only shown pages size the window", DeckPages.Largest(sizes) == (Math.Max(500, sizes.MinimumWidth), 150));
-        var saved = new DeckSettings { MonitorWidth = 5000, MonitorHeight = double.NaN, MonitorInterval = 9, MonitorPalette = (MonitorPalette)42, MonitorSort = (ProcessSort)7, LastPage = (DeckPage)9 };
+        var saved = new DeckSettings { MonitorWidth = 5000, MonitorHeight = double.NaN, MonitorInterval = 9, MonitorPalette = (MonitorPalette)42, MonitorSort = (ProcessSort)7, LastPage = (DeckPage)99 };
         saved.Normalize();
         check("Pages: monitor settings are normalized", saved is { MonitorWidth: 1200, MonitorInterval: 2, MonitorPalette: MonitorPalette.Theme, MonitorSort: ProcessSort.Cpu, LastPage: DeckPage.Usage }
             && saved.MonitorHeight == MonitorSizes.Default.Height);
