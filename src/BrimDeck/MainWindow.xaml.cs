@@ -244,7 +244,6 @@ public partial class MainWindow : Window
     private void UpdateClock()
     {
         var now = DateTime.Now;
-        ClockLabel.Text = now.ToString("HH:mm");
         if (_compactClock is not null) _compactClock.Time = now;
     }
     public void ApplySettings() => ApplySettings(false);

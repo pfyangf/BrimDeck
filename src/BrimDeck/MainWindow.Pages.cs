@@ -25,7 +25,6 @@ public partial class MainWindow
     {
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
-        ClockLabel.Visibility = Visibility.Visible;
         ApplyHeader(PanelHeader.For(36, 20));
     }
 

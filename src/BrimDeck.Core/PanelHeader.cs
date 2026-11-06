@@ -1,6 +1,6 @@
 namespace BrimDeck.Core;
 
-// The row above both pages of the open panel: the page switch at the left, the clock in the centre, and the media source,
+// The row above both pages of the open panel: the page switch at the left, and the media source,
 // sync and settings buttons at the right. All values are whole DIPs.
 // Row: the height the page gives its header. The music page gives it Toolbar + Top, so its content starts right below.
 // Height: Row rounded down to an even number. The switch and the buttons are an even number of DIPs tall, so centred in it
@@ -37,7 +37,7 @@ public sealed record PanelHeader(double Row, double Height, double Side, double 
     public static PanelHeader Music(MusicMetrics metrics) => For(metrics.Toolbar + metrics.Top, metrics.Side);
 
     // The music page's header with the usage page's controls: the same band (Height), switch, buttons, settings button and
-    // switch top, so the switch, the clock and the right group keep their distance from the panel's top edge when the page
+    // switch top, so the switch and the right group keep their distance from the panel's top edge when the page
     // changes. Row stays the music page's own row, where its content starts: a taller row leaves its extra height below the
     // controls. Side and RightMargin stay the music page's, so the switch and the gear keep lining up with its content.
     public PanelHeader WithControlsOf(PanelHeader usage) => this with

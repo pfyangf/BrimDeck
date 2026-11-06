@@ -115,12 +115,11 @@ public partial class MainWindow
         return snapshot.Entries.Where(x => x.Time.LocalDateTime >= start).ToList();
     }
 
-    // The cheap part of a render: clock, gear tooltip and the synchronization button. Run on every expansion.
+    // The cheap part of a render: gear tooltip and the synchronization button. Run on every expansion.
     internal void RefreshStatus()
     {
         RenderSyncButton();
         RenderPageSwitch();
-        ClockLabel.Text = DateTime.Now.ToString("HH:mm");
         // The gear shows a tooltip only while it carries the update notice.
         var updates = _app.Updates;
         SettingsButton.ToolTip = updates.NoticeVersion is { } version ? Loc.T($"新版本 {version} 可用", $"Version {version} is available")
@@ -158,7 +157,7 @@ public partial class MainWindow
         try { render(); }
         catch (Exception)
         {
-            // Keep the island alive if a utility page throw mid-rebuild; clock/page switch will try again.
+            // Keep the island alive if a utility page throw mid-rebuild; page switch will try again.
         }
     }
 
@@ -187,7 +186,7 @@ public partial class MainWindow
         {
             // The page as it was built; another page may have taken the header meanwhile.
             ApplyHeader(_usageHeaderBuilt);
-            ClockLabel.Visibility = Visibility.Visible; ModelToolbar.Visibility = Visibility.Collapsed;
+            ModelToolbar.Visibility = Visibility.Collapsed;
             ApplicationPages.Visibility = ApplicationPages.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             return;
         }
@@ -204,7 +203,7 @@ public partial class MainWindow
                 PageHandover.Brighten(column);
         _flippedColumn = null;
         // The application pager is left out: it is what was clicked, under the pointer, when application pages flip.
-        foreach (var part in new UIElement[] { ModelToolbar, PageSwitch, ClockLabel }) PageHandover.Arrive(part, motion);
+        foreach (var part in new UIElement[] { ModelToolbar, PageSwitch }) PageHandover.Arrive(part, motion);
     }
 
     private void RenderUsagePage()
@@ -215,7 +214,6 @@ public partial class MainWindow
         ApplicationPages.Children.Clear(); ApplicationPages.Visibility = Visibility.Collapsed;
         double panelHeight = ContentCanvas.Height;
         ApplyHeader(UnfittedHeader(panelHeight));
-        ClockLabel.Visibility = _details ? Visibility.Collapsed : Visibility.Visible;
         ModelToolbar.Visibility = _details ? Visibility.Visible : Visibility.Collapsed;
 
         // The compact rings may keep the data current while the AI usage page itself is switched off.

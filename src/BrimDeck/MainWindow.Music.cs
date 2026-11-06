@@ -182,7 +182,7 @@ public partial class MainWindow
     private void MonitorPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Monitor);
     // Where the usage page's application tabs start: after the page switch, which holds one 28 DIP button per shown page.
     private double ApplicationPagesLeft(double side) { int pages = DeckPages.Visible(Settings).Count; return side + (pages <= 1 ? 36 : 72 + 29 * (pages - 2)); }
-    // The header shared by both pages (see PanelHeader). Its row holds the page's top margin, so the clock, the switch and the
+    // The header shared by both pages (see PanelHeader). Its row holds the page's top margin, so the switch and the
     // right group are centred on one line, and the switch and the gear line up with the page's content edges. Toolbar's own
     // height replaces its binding to the row: the music page takes the usage page's controls (PanelHeader.WithControlsOf), so
     // its band can be shorter than its row, with the rest below the controls; the row may also be one DIP taller, and the
@@ -206,12 +206,11 @@ public partial class MainWindow
         SettingsButton.Height = header.SettingsHeight;
         if (SettingsButton.Parent is FrameworkElement right) right.Margin = new Thickness(0, 0, header.RightMargin, 0);
         ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(header.Side), 0, 0, 0);
-        LayoutExpandedClock();
     }
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in PageSwitchButtons().Cast<FrameworkElement>().Concat<FrameworkElement>([MediaSourceButton, ClockLabel]))
+        foreach (var control in PageSwitchButtons().Cast<FrameworkElement>().Concat<FrameworkElement>([MediaSourceButton]))
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage ? Visibility.Collapsed : Visibility.Visible;
         OrderPageButtons();
@@ -234,7 +233,6 @@ public partial class MainWindow
         MediaSourceLabel.Text = _mediaTrack is { } playing ? Loc.Label(playing.Source) : alone ? FullControlButtonLabel : "";
         MediaSourcePin.Visibility = _pinnedMedia is not null && _pinnedMedia == _mediaTrack?.Id ? Visibility.Visible : Visibility.Collapsed;
         MediaSourceChevron.Visibility = _mediaTrack is not null && (_mediaTracks.Count > 1 || entry) ? Visibility.Visible : Visibility.Collapsed;
-        LayoutExpandedClock();
     }
     private void MediaChanged()
     {
@@ -435,7 +433,7 @@ public partial class MainWindow
         bool shown = MusicContent.IsVisible && _expanded && !_preview;
         RefreshStatus();
         ShowOnlyPage(MusicContent);
-        ModelToolbar.Visibility = Visibility.Collapsed; ApplicationPages.Visibility = Visibility.Collapsed; ClockLabel.Visibility = Visibility.Visible;
+        ModelToolbar.Visibility = Visibility.Collapsed; ApplicationPages.Visibility = Visibility.Collapsed;
         double h = ContentCanvas.Height, w = ContentCanvas.Width;
         var track = _mediaTrack;
         if (_seeking && _seekTrack is { } seeking && track is not null && SameMediaSong(seeking, track))

@@ -78,7 +78,6 @@ public partial class MainWindow
         ShowOnlyPage(MailContent);
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
-        ClockLabel.Visibility = Visibility.Visible;
         ApplyHeader(PanelHeader.For(36, 20));
         int previous = _mailShown;
         _mailShown = _mailIndex;
