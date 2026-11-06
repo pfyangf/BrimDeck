@@ -71,7 +71,7 @@ public partial class MainWindow
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 string name = string.IsNullOrWhiteSpace(item.Name) ? item.Target : item.Name;
-                // List shows name + shell icon only; the path stays in the tooltip and the edit dialog.
+                // Icon + name + path (secondary line). Path also stays in the edit dialog.
                 var left = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -80,7 +80,10 @@ public partial class MainWindow
                     ToolTip = item.Target
                 };
                 left.Children.Add(ShortcutGlyph(item.Target, name));
-                left.Children.Add(UI.Centered(name, 13, UI.Primary, FontWeights.SemiBold));
+                var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                text.Children.Add(UI.Centered(name, 13, UI.Primary, FontWeights.SemiBold));
+                text.Children.Add(UI.Line(item.Target, 11, UI.Tertiary));
+                left.Children.Add(text);
                 left.MouseLeftButtonUp += (_, e) => { LaunchShortcut(item); e.Handled = true; };
                 grid.Children.Add(left);
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
@@ -141,7 +144,7 @@ public partial class MainWindow
 
     private static FrameworkElement ShortcutGlyph(string target, string displayName)
     {
-        const double size = 22;
+        const double size = 28;
         if (IsShortcutIconPath(target))
         {
             string path = target.Trim();
