@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using BrimDeck.Core;
 using Microsoft.Win32;
 
@@ -18,10 +19,12 @@ public partial class MainWindow
         void Reload()
         {
             _shortcuts = [.. _app.Shortcuts.Load()];
+            WarmShortcutIcons(_shortcuts);
             Dispatcher.BeginInvoke(() => { if (IsShortcutsPage && _expanded) { _shortcutsForm = ""; RenderShortcuts(); } });
         }
         _app.Shortcuts.Changed += Reload;
         _shortcuts = [.. _app.Shortcuts.Load()];
+        WarmShortcutIcons(_shortcuts);
     }
 
     private void RenderShortcuts()
@@ -56,6 +59,7 @@ public partial class MainWindow
             foreach (var shortcut in _shortcuts)
             {
                 var item = shortcut;
+                WarmShortcutIcon(item.Target);
                 var row = new Border
                 {
                     Background = UI.Brush(PanelTheme.Hex("fill")),
@@ -66,10 +70,17 @@ public partial class MainWindow
                 var grid = new Grid();
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                var left = new StackPanel { Cursor = System.Windows.Input.Cursors.Hand };
                 string name = string.IsNullOrWhiteSpace(item.Name) ? item.Target : item.Name;
+                // List shows name + shell icon only; the path stays in the tooltip and the edit dialog.
+                var left = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    ToolTip = item.Target
+                };
+                left.Children.Add(ShortcutGlyph(item.Target, name));
                 left.Children.Add(UI.Centered(name, 13, UI.Primary, FontWeights.SemiBold));
-                left.Children.Add(UI.Line(item.Target, 11, UI.Tertiary));
                 left.MouseLeftButtonUp += (_, e) => { LaunchShortcut(item); e.Handled = true; };
                 grid.Children.Add(left);
                 var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
@@ -99,6 +110,92 @@ public partial class MainWindow
         if (!ShortcutItems.IsSafeTarget(item.Target)) return;
         try { Process.Start(new ProcessStartInfo(item.Target) { UseShellExecute = true }); }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or FileNotFoundException) { }
+    }
+
+    private static void WarmShortcutIcons(IEnumerable<ShortcutItem> items)
+    {
+        foreach (var item in items) WarmShortcutIcon(item.Target);
+    }
+
+    // File / .lnk / .url paths use the ProcessIcons cache (SHGetFileInfo resolves .lnk to the target icon, overlay OK).
+    private static void WarmShortcutIcon(string target)
+    {
+        if (IsShortcutIconPath(target)) ProcessIcons.Prepare(target.Trim());
+    }
+
+    private static bool IsShortcutUri(string target)
+    {
+        string value = (target ?? "").Trim();
+        return value.Contains("://", StringComparison.Ordinal)
+            || value.StartsWith("shell:", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("ms-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsShortcutIconPath(string target)
+    {
+        string value = (target ?? "").Trim();
+        if (value.Length == 0 || IsShortcutUri(value)) return false;
+        try { _ = Path.GetFullPath(value); return true; }
+        catch (Exception) { return false; }
+    }
+
+    private static FrameworkElement ShortcutGlyph(string target, string displayName)
+    {
+        const double size = 22;
+        if (IsShortcutIconPath(target))
+        {
+            string path = target.Trim();
+            ProcessIcons.Prepare(path);
+            if (ProcessIcons.For(path) is { } image)
+            {
+                return new Image
+                {
+                    Source = image,
+                    Width = size,
+                    Height = size,
+                    Margin = new Thickness(0, 0, 10, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Stretch = Stretch.Uniform,
+                    SnapsToDevicePixels = true
+                };
+            }
+        }
+
+        // Missing / broken path or a shell URI: letter disc, never crash.
+        string glyph = ShortcutInitial(displayName);
+        return new Border
+        {
+            Width = size,
+            Height = size,
+            CornerRadius = new CornerRadius(size / 2),
+            Background = UI.Brush(UI.Track),
+            Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new Viewbox
+            {
+                Width = size * 0.55,
+                Height = size * 0.55,
+                Stretch = Stretch.Uniform,
+                Child = new TextBlock
+                {
+                    Text = glyph,
+                    FontFamily = UI.PanelFont,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = UI.Brush(UI.Secondary),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            }
+        };
+    }
+
+    private static string ShortcutInitial(string text)
+    {
+        string value = (text ?? "").Trim();
+        if (value.Length == 0) return "?";
+        return char.IsHighSurrogate(value[0]) && value.Length > 1
+            ? value[..2]
+            : char.ToUpperInvariant(value[0]).ToString();
     }
 
     // Opens a file picker first so “Add shortcut” always shows a selection window (exe / lnk / …).
