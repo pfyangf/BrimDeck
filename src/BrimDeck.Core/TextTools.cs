@@ -29,7 +29,7 @@ public static class TextTools
             error = "";
             return true;
         }
-        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        catch (Exception ex) when (ex is System.FormatException or ArgumentException)
         {
             result = text ?? ""; error = ex.Message; return false;
         }
@@ -57,7 +57,7 @@ public static class TextTools
             error = "";
             return true;
         }
-        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        catch (Exception ex) when (ex is System.FormatException or ArgumentException)
         {
             result = text ?? ""; error = ex.Message; return false;
         }
