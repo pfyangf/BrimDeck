@@ -29,6 +29,14 @@ public partial class MainWindow
         ApplyHeader(PanelHeader.For(36, 20));
     }
 
+    private void StopUtilityPageTimers()
+    {
+        _otpTimer?.Stop();
+        _mailTimer?.Stop();
+        _pomodoroUiTimer?.Stop();
+    }
+
+
     private Border DeckChip(string title, bool primary, Action click, string? tag = null)
     {
         var label = UI.Centered(title, 12.5, primary ? "#041018" : UI.Primary, FontWeights.SemiBold);

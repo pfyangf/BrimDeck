@@ -14,6 +14,7 @@ namespace BrimDeck.Native;
 internal sealed class ToastMirror : IDisposable
 {
     private static readonly TimeSpan PollEvery = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan MailOtpOnlyEvery = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan RetryEvery = TimeSpan.FromSeconds(15);
     private static readonly string[] Templates =
     [
@@ -92,7 +93,9 @@ internal sealed class ToastMirror : IDisposable
             var (access, toasts) = await ReadAsync(force);
             if (_disposed) return;
             Status = Describe(access, flags);
-            _timer.Interval = access == Access.Allowed ? PollEvery : RetryEvery;
+            _timer.Interval = access == Access.Allowed
+                ? (flags.Banners ? PollEvery : MailOtpOnlyEvery)
+                : RetryEvery;
             if (toasts is null || !flags.Any) return;
             toasts.Sort((a, b) => a.Created.CompareTo(b.Created));
             var fresh = _feed.Observe(toasts, flags.Allows);
@@ -228,7 +231,8 @@ internal sealed class ToastMirror : IDisposable
 
     private void FeedInbox(IReadOnlyList<ToastSnapshot> toasts, Flags flags)
     {
-        if (_inbox is null || !flags.Banners) return;
+        // Inbox is only for the Messages page. Collapsed banners still use Observe/Arrived without rebuilding that list.
+        if (_inbox is null || !flags.Banners || !flags.MessagesPage) return;
         var batch = new List<InboxMessage>();
         foreach (var item in toasts)
         {
@@ -238,7 +242,7 @@ internal sealed class ToastMirror : IDisposable
         if (batch.Count > 0) _inbox.Remember(batch);
     }
 
-    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail, bool Lark, bool DingTalk, bool WeCom, bool MailOtp)
+    private readonly record struct Flags(bool Master, bool Qq, bool WeChat, bool Mail, bool Lark, bool DingTalk, bool WeCom, bool MailOtp, bool MessagesPage)
     {
         public bool Banners => Master && (Qq || WeChat || Mail || Lark || DingTalk || WeCom);
         public bool Any => Banners || MailOtp;
@@ -254,6 +258,6 @@ internal sealed class ToastMirror : IDisposable
         };
         public static Flags From(DeckSettings settings) => new(settings.MessageNotices, settings.NoticeQq, settings.NoticeWeChat, settings.NoticeMail,
             settings.NoticeLark, settings.NoticeDingTalk, settings.NoticeWeCom,
-            settings.MailOtpPage && settings.MailOtpOutlook);
+            settings.MailOtpPage && settings.MailOtpOutlook, settings.MessagesPage);
     }
 }

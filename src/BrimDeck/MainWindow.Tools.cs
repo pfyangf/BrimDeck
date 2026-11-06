@@ -1,4 +1,3 @@
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,11 +14,15 @@ public partial class MainWindow
     private void RenderTools()
     {
         if (ToolsContent is null) return;
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{PanelTheme.Generation}|{Loc.Language}";
+        if (form == _toolsForm && ToolsContent.Children.Count > 0)
+        {
+            ShowOnlyPage(ToolsContent);
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(ToolsContent);
-        string form = $"{ContentCanvas.Width:0}|{PanelTheme.Generation}|{Loc.Language}";
-        if (form == _toolsForm && ToolsContent.Children.Count > 0) return;
         _toolsForm = form;
         ToolsContent.Children.Clear();
         var wrap = new WrapPanel { Margin = new Thickness(4) };
@@ -75,11 +78,18 @@ public partial class MainWindow
         var run = new Button { Content = Loc.T("生成", "Generate"), Padding = new Thickness(12, 6, 12, 6) };
         run.Click += (_, _) =>
         {
-            if (TextTools.QrBgra(input.Text) is not { } qr) { image.Source = null; return; }
-            var bmp = new WriteableBitmap(qr.Size, qr.Size, 96, 96, PixelFormats.Bgra32, null);
-            bmp.WritePixels(new Int32Rect(0, 0, qr.Size, qr.Size), qr.Pixels, qr.Size * 4, 0);
-            bmp.Freeze();
-            image.Source = bmp;
+            try
+            {
+                if (TextTools.QrBgra(input.Text) is not { } qr) { image.Source = null; return; }
+                var bmp = new WriteableBitmap(qr.Size, qr.Size, 96, 96, PixelFormats.Bgra32, null);
+                bmp.WritePixels(new Int32Rect(0, 0, qr.Size, qr.Size), qr.Pixels, qr.Size * 4, 0);
+                bmp.Freeze();
+                image.Source = bmp;
+            }
+            catch (Exception)
+            {
+                image.Source = null;
+            }
         };
         var root = (StackPanel)dialog.Content!;
         root.Children.Add(input); root.Children.Add(run); root.Children.Add(image);
@@ -97,7 +107,11 @@ public partial class MainWindow
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         var enc = new Button { Content = Loc.T("编码", "Encode"), Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 8, 0) };
         var dec = new Button { Content = Loc.T("解码", "Decode"), Padding = new Thickness(12, 6, 12, 6) };
-        enc.Click += (_, _) => { output.Text = encode(input.Text); status.Text = Loc.T("完成", "Done"); };
+        enc.Click += (_, _) =>
+        {
+            try { output.Text = encode(input.Text); status.Text = Loc.T("完成", "Done"); }
+            catch (Exception ex) { status.Text = ex.Message; }
+        };
         dec.Click += (_, _) =>
         {
             if (decode(input.Text, out var result, out var error)) { output.Text = result; status.Text = Loc.T("完成", "Done"); }

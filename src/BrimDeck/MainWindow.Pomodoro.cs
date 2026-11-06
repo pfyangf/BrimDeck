@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using BrimDeck.Core;
 
 namespace BrimDeck;
@@ -8,33 +9,50 @@ public partial class MainWindow
 {
     internal bool IsPomodoroPage => CurrentPage == DeckPage.Pomodoro;
     private string _pomodoroForm = "";
+    private TextBlock? _pomodoroTime;
+    private DispatcherTimer? _pomodoroUiTimer;
 
     private void WatchPomodoro()
     {
         if (_app.Pomodoro is { } service)
-            service.Changed += () => Dispatcher.BeginInvoke(() => { if (IsPomodoroPage && _expanded) { _pomodoroForm = ""; RenderPomodoro(); } });
+            service.Changed += () => Dispatcher.BeginInvoke(() =>
+            {
+                if (IsPomodoroPage && _expanded) { _pomodoroForm = ""; RenderPomodoro(); }
+                else EnsurePomodoroUiTimer();
+            });
+        _pomodoroUiTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _pomodoroUiTimer.Tick += (_, _) =>
+        {
+            if (!IsPomodoroPage || !_expanded) { _pomodoroUiTimer!.Stop(); return; }
+            PaintPomodoroLive();
+        };
+        EnsurePomodoroUiTimer();
     }
 
     private void RenderPomodoro()
     {
         if (PomodoroContent is null) return;
+        var clock = _app.Pomodoro?.Clock ?? new PomodoroClock();
+        // Seconds stay out of the form key: the countdown paints in place so expand/clock ticks do not rebuild the tree.
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{clock.Phase}|{clock.Running}|{Settings.PomodoroFocusMinutes}|{Settings.PomodoroBreakMinutes}|{Settings.PomodoroLongBreakMinutes}|{Settings.PomodoroLongEvery}|{clock.CompletedFocus}|{PanelTheme.Generation}|{Loc.Language}";
+        if (form == _pomodoroForm && PomodoroContent.Children.Count > 0)
+        {
+            ShowOnlyPage(PomodoroContent);
+            PaintPomodoroLive();
+            EnsurePomodoroUiTimer();
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(PomodoroContent);
-        var clock = _app.Pomodoro?.Clock ?? new PomodoroClock();
-        var left = clock.Remaining(DateTimeOffset.Now);
-        string form = $"{ContentCanvas.Width:0}|{clock.Phase}|{clock.Running}|{left.TotalSeconds:0}|{Settings.PomodoroFocusMinutes}|{Settings.PomodoroBreakMinutes}|{Settings.PomodoroLongBreakMinutes}|{clock.CompletedFocus}|{PanelTheme.Generation}|{Loc.Language}";
-        if (form == _pomodoroForm && PomodoroContent.Children.Count > 0) return;
         _pomodoroForm = form;
         PomodoroContent.Children.Clear();
+        _pomodoroTime = null;
         var root = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
         root.Children.Add(UI.Centered(PomodoroClock.PhaseName(clock.Phase), 13, UI.Secondary, FontWeights.SemiBold));
-        string time = clock.Phase == PomodoroPhase.Idle
-            ? $"{Settings.PomodoroFocusMinutes:00}:00"
-            : $"{(int)left.TotalMinutes:00}:{left.Seconds:00}";
-        var timer = UI.Centered(time, 42, UI.Primary, FontWeights.SemiBold);
-        timer.Margin = new Thickness(0, 8, 0, 12);
-        root.Children.Add(timer);
+        _pomodoroTime = UI.Centered(PomodoroTimeText(clock), 42, UI.Primary, FontWeights.SemiBold);
+        _pomodoroTime.Margin = new Thickness(0, 8, 0, 12);
+        root.Children.Add(_pomodoroTime);
         root.Children.Add(UI.Centered(Loc.T($"已完成 {clock.CompletedFocus} 个专注", $"{clock.CompletedFocus} focus sessions done"), 11.5, UI.Tertiary));
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 14, 0, 0) };
         if (clock.Phase == PomodoroPhase.Idle)
@@ -47,6 +65,31 @@ public partial class MainWindow
         actions.Children.Add(DeckChip(Loc.T("时长", "Durations"), false, EditPomodoroDurations));
         root.Children.Add(actions);
         PomodoroContent.Children.Add(root);
+        EnsurePomodoroUiTimer();
+    }
+
+    private void PaintPomodoroLive()
+    {
+        if (_pomodoroTime is null) return;
+        var clock = _app.Pomodoro?.Clock ?? new PomodoroClock();
+        string next = PomodoroTimeText(clock);
+        if (_pomodoroTime.Text != next) _pomodoroTime.Text = next;
+    }
+
+    private string PomodoroTimeText(PomodoroClock clock)
+    {
+        if (clock.Phase == PomodoroPhase.Idle)
+            return $"{Settings.PomodoroFocusMinutes:00}:00";
+        var left = clock.Remaining(DateTimeOffset.Now);
+        return $"{(int)left.TotalMinutes:00}:{left.Seconds:00}";
+    }
+
+    private void EnsurePomodoroUiTimer()
+    {
+        if (_pomodoroUiTimer is null) return;
+        bool need = IsPomodoroPage && _expanded && _app.Pomodoro?.Clock.Running == true;
+        if (need) { if (!_pomodoroUiTimer.IsEnabled) _pomodoroUiTimer.Start(); }
+        else _pomodoroUiTimer.Stop();
     }
 
     private void EditPomodoroDurations()

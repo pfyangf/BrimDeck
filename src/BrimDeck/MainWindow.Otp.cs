@@ -45,18 +45,24 @@ public partial class MainWindow
     {
         if (OtpContent is null) return;
         bool shown = OtpContent.IsVisible && _expanded && !_preview;
+        LoadOtpAccounts();
+        double width = ContentCanvas.Width, height = ContentCanvas.Height;
+        string ids = string.Join(",", _otpAccounts.Select(account => account.Id.ToString("N") + ":" + account.Issuer + ":" + account.Name + ":" + account.Digits + ":" + account.Period + ":" + account.Algorithm));
+        bool copied = _otpAccounts.Count > 0 && _otpAccounts[_otpIndex].Id == _otpCopied && DateTimeOffset.Now < _otpCopiedUntil;
+        string form = $"{width:0}|{height:0}|{_otpIndex}|{_otpUnreadable}|{ids}|{PanelTheme.Generation}|{Loc.Language}|{copied}|{_otpShown}";
+        if (form == _otpForm && OtpContent.Children.Count > 0)
+        {
+            ShowOnlyPage(OtpContent);
+            PaintOtpLive();
+            EnsureOtpTimer();
+            return;
+        }
         RefreshStatus();
         ShowOnlyPage(OtpContent);
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
         ClockLabel.Visibility = Visibility.Visible;
         ApplyHeader(PanelHeader.For(36, 20));
-        LoadOtpAccounts();
-        double width = ContentCanvas.Width, height = ContentCanvas.Height;
-        string ids = string.Join(",", _otpAccounts.Select(account => account.Id.ToString("N") + ":" + account.Issuer + ":" + account.Name + ":" + account.Digits + ":" + account.Period + ":" + account.Algorithm));
-        bool copied = _otpAccounts.Count > 0 && _otpAccounts[_otpIndex].Id == _otpCopied && DateTimeOffset.Now < _otpCopiedUntil;
-        string form = $"{width:0}|{height:0}|{_otpIndex}|{_otpUnreadable}|{ids}|{PanelTheme.Generation}|{Loc.Language}|{copied}|{_otpShown}";
-        if (form == _otpForm && OtpContent.Children.Count > 0) { PaintOtpLive(); EnsureOtpTimer(); return; }
         int previous = _otpShown;
         _otpShown = _otpIndex;
         _otpForm = form;

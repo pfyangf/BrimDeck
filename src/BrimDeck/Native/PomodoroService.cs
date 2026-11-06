@@ -3,6 +3,8 @@ using BrimDeck.Core;
 
 namespace BrimDeck.Native;
 
+// Advances a running pomodoro on the UI dispatcher. The timer is off while idle or paused so an unused page
+// does not wake the island every second; the open page paints the countdown itself (MainWindow.Pomodoro).
 internal sealed class PomodoroService : IDisposable
 {
     private readonly DispatcherTimer _timer;
@@ -14,7 +16,7 @@ internal sealed class PomodoroService : IDisposable
         _settings = settings;
         Clock = new PomodoroClock();
         _timer = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => Tick(), dispatcher);
-        _timer.Start();
+        _timer.Stop();
     }
 
     public PomodoroClock Clock { get; }
@@ -26,18 +28,37 @@ internal sealed class PomodoroService : IDisposable
         _timer.Stop();
     }
 
+    public void Notify()
+    {
+        ApplyTimer();
+        Changed?.Invoke();
+    }
+
+    private void ApplyTimer()
+    {
+        if (_disposed) return;
+        if (Clock.Running) { if (!_timer.IsEnabled) _timer.Start(); }
+        else _timer.Stop();
+    }
+
     private void Tick()
     {
         if (_disposed) return;
-        var settings = _settings();
-        if (Clock.Tick(settings, DateTimeOffset.Now, out var finished))
+        try
         {
-            if (settings.PomodoroNotify && finished != PomodoroPhase.Idle)
-                LocalNotice.Show(PomodoroClock.PhaseName(finished), Loc.T("阶段结束", "Phase ended"));
-            Changed?.Invoke();
+            var settings = _settings();
+            if (Clock.Tick(settings, DateTimeOffset.Now, out var finished))
+            {
+                if (settings.PomodoroNotify && finished != PomodoroPhase.Idle)
+                    LocalNotice.Show(PomodoroClock.PhaseName(finished), Loc.T("阶段结束", "Phase ended"));
+                Changed?.Invoke();
+            }
+            ApplyTimer();
         }
-        else if (Clock.Running) Changed?.Invoke();
+        catch (Exception)
+        {
+            // A toast or settings read must not take down the dispatcher tick.
+            ApplyTimer();
+        }
     }
-
-    public void Notify() => Changed?.Invoke();
 }

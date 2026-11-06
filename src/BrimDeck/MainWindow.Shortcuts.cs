@@ -13,18 +13,27 @@ public partial class MainWindow
 
     private void WatchShortcuts()
     {
-        _app.Shortcuts.Changed += () => Dispatcher.BeginInvoke(() => { if (IsShortcutsPage && _expanded) { _shortcutsForm = ""; RenderShortcuts(); } });
+        void Reload()
+        {
+            _shortcuts = [.. _app.Shortcuts.Load()];
+            Dispatcher.BeginInvoke(() => { if (IsShortcutsPage && _expanded) { _shortcutsForm = ""; RenderShortcuts(); } });
+        }
+        _app.Shortcuts.Changed += Reload;
+        _shortcuts = [.. _app.Shortcuts.Load()];
     }
 
     private void RenderShortcuts()
     {
         if (ShortcutsContent is null) return;
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{ShortcutItems.Export(_shortcuts)}|{PanelTheme.Generation}|{Loc.Language}";
+        if (form == _shortcutsForm && ShortcutsContent.Children.Count > 0)
+        {
+            ShowOnlyPage(ShortcutsContent);
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(ShortcutsContent);
-        _shortcuts = [.. _app.Shortcuts.Load()];
-        string form = $"{ContentCanvas.Width:0}|{ShortcutItems.Export(_shortcuts)}|{PanelTheme.Generation}|{Loc.Language}";
-        if (form == _shortcutsForm && ShortcutsContent.Children.Count > 0) return;
         _shortcutsForm = form;
         ShortcutsContent.Children.Clear();
         var root = new Grid();

@@ -153,17 +153,27 @@ public partial class MainWindow
             DateTime.Now.Ticks / TimeSpan.TicksPerMinute, VisualTreeHelper.GetDpi(this).DpiScaleY, _scale);
     }
 
+    private void SafeUtilityRender(Action render)
+    {
+        try { render(); }
+        catch (Exception)
+        {
+            // Keep the island alive if a utility page throw mid-rebuild; clock/page switch will try again.
+        }
+    }
+
     public void RenderUsage()
     {
         if (UsageContent is null) return;
-        if (IsOtpPage) { RenderOtp(); return; }
-        if (IsMailPage) { RenderMail(); return; }
-        if (IsMessagesPage) { RenderMessages(); return; }
-        if (IsAlarmPage) { RenderAlarm(); return; }
-        if (IsPomodoroPage) { RenderPomodoro(); return; }
-        if (IsMemoPage) { RenderMemo(); return; }
-        if (IsShortcutsPage) { RenderShortcuts(); return; }
-        if (IsToolsPage) { RenderTools(); return; }
+        // Utility / OTP / mail pages: a throw here used to leave the open panel half-built and feel like a restart.
+        if (IsOtpPage) { SafeUtilityRender(RenderOtp); return; }
+        if (IsMailPage) { SafeUtilityRender(RenderMail); return; }
+        if (IsMessagesPage) { SafeUtilityRender(RenderMessages); return; }
+        if (IsAlarmPage) { SafeUtilityRender(RenderAlarm); return; }
+        if (IsPomodoroPage) { SafeUtilityRender(RenderPomodoro); return; }
+        if (IsMemoPage) { SafeUtilityRender(RenderMemo); return; }
+        if (IsShortcutsPage) { SafeUtilityRender(RenderShortcuts); return; }
+        if (IsToolsPage) { SafeUtilityRender(RenderTools); return; }
         if (IsMusicPage) { RenderMusic(); return; }
         if (IsMonitorPage) { RenderMonitor(); return; }
         // Only a page that was on screen hands over; one that arrives by the page switch or with the panel opening comes in whole.

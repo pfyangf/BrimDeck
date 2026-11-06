@@ -4,6 +4,7 @@ using BrimDeck.Core;
 namespace BrimDeck.Native;
 
 // Checks alarms once a second on the UI dispatcher. Marks FiredDate and raises Fired so decks can refresh.
+// The timer stays off unless the Alarm page is enabled and at least one alarm is on.
 internal sealed class AlarmService : IDisposable
 {
     private readonly DispatcherTimer _timer;
@@ -48,17 +49,24 @@ internal sealed class AlarmService : IDisposable
     private void Tick()
     {
         if (_disposed || !_settings().AlarmPage) return;
-        var now = DateTimeOffset.Now;
-        bool dirty = false;
-        foreach (var item in _items)
+        try
         {
-            if (!item.IsDue(now)) continue;
-            item.FiredDate = now.ToString("yyyy-MM-dd");
-            dirty = true;
-            string label = string.IsNullOrWhiteSpace(item.Label) ? Loc.T("闹钟", "Alarm") : item.Label;
-            LocalNotice.Show(label, AlarmItems.TimeLabel(item));
-            Fired?.Invoke(item);
+            var now = DateTimeOffset.Now;
+            bool dirty = false;
+            foreach (var item in _items)
+            {
+                if (!item.IsDue(now)) continue;
+                item.FiredDate = now.ToString("yyyy-MM-dd");
+                dirty = true;
+                string label = string.IsNullOrWhiteSpace(item.Label) ? Loc.T("闹钟", "Alarm") : item.Label;
+                LocalNotice.Show(label, AlarmItems.TimeLabel(item));
+                Fired?.Invoke(item);
+            }
+            if (dirty) _store.Save(_items);
         }
-        if (dirty) _store.Save(_items);
+        catch (Exception)
+        {
+            // A toast or disk write must not kill the alarm tick.
+        }
     }
 }

@@ -1,6 +1,5 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using BrimDeck.Core;
 
 namespace BrimDeck;
@@ -13,20 +12,29 @@ public partial class MainWindow
 
     private void WatchAlarm()
     {
-        _app.Alarms.Changed += () => Dispatcher.BeginInvoke(() => { if (IsAlarmPage && _expanded) { _alarmForm = ""; RenderAlarm(); } });
+        void Reload()
+        {
+            _alarms = [.. _app.Alarms.Load()];
+            Dispatcher.BeginInvoke(() => { if (IsAlarmPage && _expanded) { _alarmForm = ""; RenderAlarm(); } });
+        }
+        _app.Alarms.Changed += Reload;
         if (_app.AlarmClock is { } clock)
             clock.Fired += _ => Dispatcher.BeginInvoke(() => { if (IsAlarmPage && _expanded) { _alarmForm = ""; RenderAlarm(); } });
+        _alarms = [.. _app.Alarms.Load()];
     }
 
     private void RenderAlarm()
     {
         if (AlarmContent is null) return;
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{AlarmItems.Export(_alarms)}|{PanelTheme.Generation}|{Loc.Language}";
+        if (form == _alarmForm && AlarmContent.Children.Count > 0)
+        {
+            ShowOnlyPage(AlarmContent);
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(AlarmContent);
-        _alarms = [.. _app.Alarms.Load()];
-        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{AlarmItems.Export(_alarms)}|{PanelTheme.Generation}|{Loc.Language}";
-        if (form == _alarmForm && AlarmContent.Children.Count > 0) return;
         _alarmForm = form;
         AlarmContent.Children.Clear();
         var root = new Grid();

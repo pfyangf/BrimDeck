@@ -12,18 +12,27 @@ public partial class MainWindow
 
     private void WatchMemo()
     {
-        _app.Memos.Changed += () => Dispatcher.BeginInvoke(() => { if (IsMemoPage && _expanded) { _memoForm = ""; RenderMemo(); } });
+        void Reload()
+        {
+            _memos = [.. _app.Memos.Load()];
+            Dispatcher.BeginInvoke(() => { if (IsMemoPage && _expanded) { _memoForm = ""; RenderMemo(); } });
+        }
+        _app.Memos.Changed += Reload;
+        _memos = [.. _app.Memos.Load()];
     }
 
     private void RenderMemo()
     {
         if (MemoContent is null) return;
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{MemoItems.Export(_memos)}|{PanelTheme.Generation}|{Loc.Language}";
+        if (form == _memoForm && MemoContent.Children.Count > 0)
+        {
+            ShowOnlyPage(MemoContent);
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(MemoContent);
-        _memos = [.. _app.Memos.Load()];
-        string form = $"{ContentCanvas.Width:0}|{MemoItems.Export(_memos)}|{PanelTheme.Generation}|{Loc.Language}";
-        if (form == _memoForm && MemoContent.Children.Count > 0) return;
         _memoForm = form;
         MemoContent.Children.Clear();
         var root = new Grid();

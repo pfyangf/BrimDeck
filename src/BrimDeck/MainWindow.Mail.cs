@@ -51,11 +51,9 @@ public partial class MainWindow
             if (DateTimeOffset.Now >= _mailCopiedUntil && _mailCopied != Guid.Empty)
             {
                 _mailCopied = Guid.Empty;
-                _mailForm = "";
-                RenderMail();
-                return;
+                // Form key includes the copied flag; RenderMail rebuilds only when that changes.
             }
-            _mailForm = "";
+            // Soft refresh: LoadMailItems + form key decide whether the tree is rebuilt.
             RenderMail();
         };
         if (IsMailPage && _expanded) _mailTimer.Start();
@@ -65,18 +63,23 @@ public partial class MainWindow
     {
         if (MailContent is null) return;
         bool shown = MailContent.IsVisible && _expanded && !_preview;
+        LoadMailItems();
+        double width = ContentCanvas.Width, height = ContentCanvas.Height;
+        string ids = string.Join(",", _mailItems.Select(item => item.Id.ToString("N") + ":" + (item.Code ?? "") + ":" + item.Subject));
+        bool copied = _mailItems.Count > 0 && _mailItems[_mailIndex].Id == _mailCopied && DateTimeOffset.Now < _mailCopiedUntil;
+        string form = $"{width:0}|{height:0}|{_mailIndex}|{_mailPreview}|{_mailFilter}|{ids}|{PanelTheme.Generation}|{Loc.Language}|{copied}|{_mailShown}";
+        if (form == _mailForm && MailContent.Children.Count > 0)
+        {
+            ShowOnlyPage(MailContent);
+            EnsureMailTimer();
+            return;
+        }
         RefreshStatus();
         ShowOnlyPage(MailContent);
         ModelToolbar.Visibility = Visibility.Collapsed;
         ApplicationPages.Visibility = Visibility.Collapsed;
         ClockLabel.Visibility = Visibility.Visible;
         ApplyHeader(PanelHeader.For(36, 20));
-        LoadMailItems();
-        double width = ContentCanvas.Width, height = ContentCanvas.Height;
-        string ids = string.Join(",", _mailItems.Select(item => item.Id.ToString("N") + ":" + (item.Code ?? "") + ":" + item.Subject));
-        bool copied = _mailItems.Count > 0 && _mailItems[_mailIndex].Id == _mailCopied && DateTimeOffset.Now < _mailCopiedUntil;
-        string form = $"{width:0}|{height:0}|{_mailIndex}|{_mailPreview}|{_mailFilter}|{ids}|{PanelTheme.Generation}|{Loc.Language}|{copied}|{_mailShown}";
-        if (form == _mailForm && MailContent.Children.Count > 0) { EnsureMailTimer(); return; }
         int previous = _mailShown;
         _mailShown = _mailIndex;
         _mailForm = form;

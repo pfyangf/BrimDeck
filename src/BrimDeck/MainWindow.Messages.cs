@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using BrimDeck.Core;
 
 namespace BrimDeck;
@@ -13,18 +12,22 @@ public partial class MainWindow
 
     private void WatchMessages()
     {
-        _app.Messages.Changed += () => Dispatcher.BeginInvoke(() => { if (IsMessagesPage && _expanded) RenderMessages(); });
+        _app.Messages.Changed += () => Dispatcher.BeginInvoke(() => { if (IsMessagesPage && _expanded) { _messagesForm = ""; RenderMessages(); } });
     }
 
     private void RenderMessages()
     {
         if (MessagesContent is null) return;
+        var items = _app.Messages.Snapshot().Where(item => MessageNotices.Allows(Settings, item.App)).ToList();
+        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{items.Count}|{string.Join(",", items.Take(8).Select(i => i.Key))}|{PanelTheme.Generation}|{Loc.Language}|{Settings.NoticeQq}|{Settings.NoticeWeChat}|{Settings.NoticeMail}|{Settings.NoticeLark}|{Settings.NoticeDingTalk}|{Settings.NoticeWeCom}";
+        if (form == _messagesForm && MessagesContent.Children.Count > 0)
+        {
+            ShowOnlyPage(MessagesContent);
+            return;
+        }
         RefreshStatus();
         PrepareUtilityPage();
         ShowOnlyPage(MessagesContent);
-        var items = _app.Messages.Snapshot().Where(item => MessageNotices.Allows(Settings, item.App)).ToList();
-        string form = $"{ContentCanvas.Width:0}|{ContentCanvas.Height:0}|{items.Count}|{PanelTheme.Generation}|{Loc.Language}|{Settings.NoticeQq}|{Settings.NoticeWeChat}|{Settings.NoticeMail}|{Settings.NoticeLark}|{Settings.NoticeDingTalk}|{Settings.NoticeWeCom}";
-        if (form == _messagesForm && MessagesContent.Children.Count > 0) return;
         _messagesForm = form;
         MessagesContent.Children.Clear();
         var root = new Grid();
