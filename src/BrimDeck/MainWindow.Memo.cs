@@ -71,7 +71,7 @@ public partial class MainWindow
                     _memoForm = "";
                     RenderMemo();
                 });
-                DockPanel.SetDock(del, Dock.Right);
+                DockPanel.SetDock(del, System.Windows.Controls.Dock.Right);
                 bar.Children.Add(del);
                 bar.Children.Add(row);
                 list.Children.Add(bar);
@@ -94,7 +94,7 @@ public partial class MainWindow
         };
         var root = new DockPanel { Margin = new Thickness(16) };
         var save = new Button { Content = Loc.T("保存", "Save"), Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 8, 0, 0) };
-        DockPanel.SetDock(save, Dock.Bottom);
+        DockPanel.SetDock(save, System.Windows.Controls.Dock.Bottom);
         var title = new TextBox { Text = item.Title, Margin = new Thickness(0, 0, 0, 8) };
         var body = new TextBox { Text = item.Body, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         save.Click += (_, _) =>
@@ -107,7 +107,7 @@ public partial class MainWindow
             dialog.DialogResult = true;
         };
         var stack = new DockPanel();
-        DockPanel.SetDock(title, Dock.Top);
+        DockPanel.SetDock(title, System.Windows.Controls.Dock.Top);
         stack.Children.Add(title);
         stack.Children.Add(body);
         root.Children.Add(save);

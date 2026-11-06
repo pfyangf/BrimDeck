@@ -61,7 +61,7 @@ public partial class MainWindow
                 var top = new DockPanel();
                 var when = UI.Centered(item.Created.ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture), 11, UI.Tertiary);
                 when.HorizontalAlignment = HorizontalAlignment.Right;
-                DockPanel.SetDock(when, Dock.Right);
+                DockPanel.SetDock(when, System.Windows.Controls.Dock.Right);
                 top.Children.Add(when);
                 top.Children.Add(UI.Centered(MessageNotices.AppName(item.App), 12, UI.Accent, FontWeights.SemiBold));
                 col.Children.Add(top);
