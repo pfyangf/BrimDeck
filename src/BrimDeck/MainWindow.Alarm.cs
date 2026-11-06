@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using BrimDeck.Core;
 
 namespace BrimDeck;
@@ -111,7 +112,7 @@ public partial class MainWindow
         var dialog = new Window
         {
             Title = Loc.T("闹钟", "Alarm"),
-            Width = 360, Height = 280, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Width = 360, Height = 320, WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Owner = this, ResizeMode = ResizeMode.NoResize, Background = UI.Brush(PanelTheme.Hex("surface"))
         };
         var root = new StackPanel { Margin = new Thickness(16) };
@@ -120,12 +121,19 @@ public partial class MainWindow
         var minute = new TextBox { Text = item.Minute.ToString("00"), Width = 48 };
         var timeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         timeRow.Children.Add(hour); timeRow.Children.Add(new TextBlock { Text = ":", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) }); timeRow.Children.Add(minute);
-        var days = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        // Two rows so all seven day toggles fit the fixed dialog width (global CheckBox track is 38px + 16px gap).
+        var days = new UniformGrid { Columns = 4, Rows = 2, Margin = new Thickness(0, 0, 0, 12) };
         string[] names = Loc.Language == Loc.Chinese ? ["日", "一", "二", "三", "四", "五", "六"] : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
         var checks = new CheckBox[7];
         for (int i = 0; i < 7; i++)
         {
-            checks[i] = new CheckBox { Content = names[i], IsChecked = item.Days == 0 || (item.Days & (1 << i)) != 0, Margin = new Thickness(0, 0, 6, 0) };
+            checks[i] = new CheckBox
+            {
+                Content = names[i],
+                IsChecked = item.Days == 0 || (item.Days & (1 << i)) != 0,
+                Margin = new Thickness(0, 4, 4, 4),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
             days.Children.Add(checks[i]);
         }
         var save = new Button { Content = Loc.T("保存", "Save"), Margin = new Thickness(0, 8, 0, 0), Padding = new Thickness(12, 6, 12, 6) };
